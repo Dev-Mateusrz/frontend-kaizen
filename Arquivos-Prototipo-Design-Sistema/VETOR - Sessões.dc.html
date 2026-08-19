@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>body{margin:0}*{box-sizing:border-box}@keyframes vetor-pulse{0%,100%{opacity:1}50%{opacity:.3}}</style>
+</helmet>
+<div data-screen-label="Sessões" style="height:100vh;width:100vw;overflow:hidden;display:flex;background:{{theme.bg}};color:{{theme.textPrimary}};font-family:'Inter',sans-serif">
+
+  <div style="width:72px;flex-shrink:0;background:{{theme.surface1}};border-right:1px solid {{theme.borderSubtle}};display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:6px">
+    <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;color:{{theme.accent}};margin-bottom:18px">V</div>
+    <sc-for list="{{navItems}}" as="nav" hint-placeholder-count="5">
+      <a href="{{nav.href}}" title="{{nav.label}}" style="{{nav.style}}"><div style="font-size:19px;line-height:1">{{nav.icon}}</div></a>
+    </sc-for>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+    <div style="height:56px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid {{theme.borderSubtle}}">
+      <div style="display:flex;align-items:baseline;gap:14px">
+        <div style="font-size:15px;font-weight:600">Sessões</div>
+        <div style="font-size:13px;color:{{theme.textTertiary}}">{{weekSummaryText}}</div>
+      </div>
+      <button onClick="{{toggleTheme}}" style="display:flex;align-items:center;gap:10px;background:none;border:none;cursor:pointer;padding:4px">
+        <span style="font-size:13px;color:{{theme.textSecondary}}">{{themeLabel}}</span>
+        <span style="width:40px;height:22px;border-radius:11px;background:{{theme.surface2}};border:1px solid {{theme.borderSubtle}};position:relative"><span style="{{thumbStyle}}"></span></span>
+      </button>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding:24px 24px 60px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+
+        <div style="{{cardStyle}}">
+          <div style="{{cardTitleStyle}}">Timer ao vivo</div>
+          <div style="display:flex;align-items:center;gap:16px;margin-top:16px">
+            <sc-if value="{{timer.running}}" hint-placeholder-val="{{false}}"><span style="{{timer.dotStyle}}"></span></sc-if>
+            <div style="{{timer.displayStyle}}">{{timer.label}}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:18px">
+            <select value="{{timer.phaseId}}" onChange="{{timer.onPhaseChange}}" disabled="{{timer.locked}}" style="{{selectStyle}}">
+              <option value="">Selecione a fase…</option>
+              <sc-for list="{{phaseOptions}}" as="ph" hint-placeholder-count="11"><option value="{{ph.id}}">{{ph.name}}</option></sc-for>
+            </select>
+            <select value="{{timer.source}}" onChange="{{timer.onSourceChange}}" disabled="{{timer.locked}}" style="{{selectStyle}}">
+              <sc-for list="{{timer.sourceOptions}}" as="so" hint-placeholder-count="3"><option value="{{so.value}}" disabled="{{so.disabled}}">{{so.label}}</option></sc-for>
+            </select>
+            <sc-if value="{{timer.showTrunkHint}}" hint-placeholder-val="{{false}}">
+              <div style="{{trunkHintStyle}}">Fases de tronco principal só contam sessões de Bloco dedicado.</div>
+            </sc-if>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:16px">
+            <sc-if value="{{timer.showStart}}" hint-placeholder-val="{{true}}">
+              <button disabled="{{timer.startDisabled}}" onClick="{{timer.onStart}}" style="{{timer.startBtnStyle}}">Iniciar sessão</button>
+            </sc-if>
+            <sc-if value="{{timer.showPause}}" hint-placeholder-val="{{false}}">
+              <button onClick="{{timer.onPause}}" style="{{timer.secondaryBtnStyle}}">Pausar</button>
+            </sc-if>
+            <sc-if value="{{timer.showResume}}" hint-placeholder-val="{{false}}">
+              <button onClick="{{timer.onResume}}" style="{{timer.startBtnStyle}}">Retomar</button>
+            </sc-if>
+            <sc-if value="{{timer.showStop}}" hint-placeholder-val="{{false}}">
+              <button onClick="{{timer.onStop}}" style="{{timer.stopBtnStyle}}">Parar e registrar</button>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="{{cardStyle}}">
+          <div style="{{cardTitleStyle}}">Registro manual</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+            <select value="{{manual.phaseId}}" onChange="{{manual.onPhaseChange}}" style="{{selectStyle}}">
+              <option value="">Selecione a fase…</option>
+              <sc-for list="{{phaseOptions}}" as="ph" hint-placeholder-count="11"><option value="{{ph.id}}">{{ph.name}}</option></sc-for>
+            </select>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <sc-for list="{{manual.durationChips}}" as="dc" hint-placeholder-count="5">
+                <div onClick="{{dc.onClick}}" style="{{dc.style}}">{{dc.label}}</div>
+              </sc-for>
+              <input value="{{manual.minutes}}" onChange="{{manual.onMinutesChange}}" placeholder="min." style="{{manualMinutesInputStyle}}"></input>
+            </div>
+            <select value="{{manual.source}}" onChange="{{manual.onSourceChange}}" style="{{selectStyle}}">
+              <sc-for list="{{manual.sourceOptions}}" as="so" hint-placeholder-count="3"><option value="{{so.value}}" disabled="{{so.disabled}}">{{so.label}}</option></sc-for>
+            </select>
+            <input value="{{manual.date}}" onChange="{{manual.onDateChange}}" type="date" style="{{selectStyle}}"></input>
+            <input value="{{manual.note}}" onChange="{{manual.onNoteChange}}" placeholder="Nota (opcional)" style="{{selectStyle}}"></input>
+            <button disabled="{{manual.submitDisabled}}" onClick="{{manual.onSubmit}}" style="{{manual.submitBtnStyle}}">Registrar sessão</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:28px">
+        <div style="{{historyTitleStyle}}">Histórico</div>
+        <sc-for list="{{historyGroups}}" as="grp" hint-placeholder-count="3">
+          <div style="margin-top:16px">
+            <div style="{{grp.headerStyle}}"><span>{{grp.label}}</span><span style="{{grp.totalStyle}}">{{grp.total}}</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+              <sc-for list="{{grp.sessions}}" as="s" hint-placeholder-count="2">
+                <div>
+                  <div onClick="{{s.onToggleEdit}}" style="{{s.rowStyle}}">
+                    <span style="{{s.phaseDotStyle}}"></span>
+                    <div style="{{s.phaseNameStyle}}">{{s.phaseName}}</div>
+                    <div style="{{s.sourceTagStyle}}">{{s.source}}</div>
+                    <sc-if value="{{s.hasNote}}" hint-placeholder-val="{{false}}"><div style="{{s.noteStyle}}">{{s.note}}</div></sc-if>
+                    <div style="{{s.minutesStyle}}">{{s.minutesText}}</div>
+                  </div>
+                  <sc-if value="{{s.editing}}" hint-placeholder-val="{{false}}">
+                    <div style="{{s.editBoxStyle}}">
+                      <select value="{{s.editPhaseId}}" onChange="{{s.onEditPhaseChange}}" style="{{selectStyle}}">
+                        <sc-for list="{{phaseOptions}}" as="ph" hint-placeholder-count="11"><option value="{{ph.id}}">{{ph.name}}</option></sc-for>
+                      </select>
+                      <input value="{{s.editMinutes}}" onChange="{{s.onEditMinutesChange}}" style="{{selectStyle}}"></input>
+                      <select value="{{s.editSource}}" onChange="{{s.onEditSourceChange}}" style="{{selectStyle}}">
+                        <sc-for list="{{s.editSourceOptions}}" as="so" hint-placeholder-count="3"><option value="{{so.value}}" disabled="{{so.disabled}}">{{so.label}}</option></sc-for>
+                      </select>
+                      <input value="{{s.editNote}}" onChange="{{s.onEditNoteChange}}" placeholder="Nota" style="{{selectStyle}}"></input>
+                      <div style="display:flex;gap:8px">
+                        <button onClick="{{s.onSave}}" style="{{s.saveBtnStyle}}">Salvar</button>
+                        <button onClick="{{s.onCancel}}" style="{{s.cancelBtnStyle}}">Cancelar</button>
+                      </div>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const STATUS_COLORS = { 'Bloqueada': '#64727C', 'Disponível': '#5B9BD5', 'Em andamento': '#4DD8C0', 'Aguardando validação': '#D9A441', 'Concluída': '#5FB87A', 'Pausada': '#8A7CA8', 'Em revisão': '#D97757' };
+const PHASES = [
+  { id: 'n0', name: 'Fase 0 — Começar do zero', color: STATUS_COLORS['Concluída'], trunk: false },
+  { id: 'n1a', name: 'Fase 1A — OO em Python', color: STATUS_COLORS['Concluída'], trunk: false },
+  { id: 'math', name: 'Trilha paralela — Matemática', color: STATUS_COLORS['Em andamento'], trunk: false },
+  { id: 'n2', name: 'Fase 2 — Git e rotina profissional', color: STATUS_COLORS['Em andamento'], trunk: false },
+  { id: 'n1b', name: 'Fase 1B — OO em C#', color: STATUS_COLORS['Disponível'], trunk: true },
+  { id: 'n3', name: 'Fase 3 — Engenharia de Software', color: STATUS_COLORS['Disponível'], trunk: false },
+  { id: 'n4', name: 'Fase 4 — Unity e mundo 3D', color: STATUS_COLORS['Bloqueada'], trunk: true },
+  { id: 'n5', name: 'Fase 5 — XR', color: STATUS_COLORS['Bloqueada'], trunk: true },
+  { id: 'n6', name: 'Fase 6 — AR e ambiente físico', color: STATUS_COLORS['Bloqueada'], trunk: true },
+  { id: 'n7', name: 'Fase 7 — Eng. de Computação Espacial', color: STATUS_COLORS['Bloqueada'], trunk: true },
+  { id: 'n8', name: 'Fase 8 — Especialização', color: STATUS_COLORS['Bloqueada'], trunk: true },
+];
+const SOURCES = ['Bloco dedicado', 'Estágio', 'Faculdade'];
+const TODAY = new Date(2026, 7, 13);
+function fmtDate(d) { return d.toISOString().slice(0, 10); }
+function addDays(base, n) { const d = new Date(base); d.setDate(d.getDate() + n); return d; }
+function sourceOptionsFor(phaseId) {
+  const phase = PHASES.find(p => p.id === phaseId);
+  const restricted = phase && phase.trunk;
+  return SOURCES.map(s => ({ value: s, label: s, disabled: restricted && s !== 'Bloco dedicado' }));
+}
+
+class Component extends DCLogic {
+  state = {
+    isDark: true,
+    sessions: [
+      { id: 1, phaseId: 'math', minutes: 130, source: 'Bloco dedicado', note: 'Produto vetorial e rotações', date: fmtDate(TODAY) },
+      { id: 2, phaseId: 'n2', minutes: 80, source: 'Bloco dedicado', note: '', date: fmtDate(addDays(TODAY, -1)) },
+      { id: 3, phaseId: 'math', minutes: 100, source: 'Bloco dedicado', note: '', date: fmtDate(addDays(TODAY, -2)) },
+      { id: 4, phaseId: 'n2', minutes: 70, source: 'Estágio', note: 'Configuração de repositório no trabalho', date: fmtDate(addDays(TODAY, -3)) },
+      { id: 5, phaseId: 'math', minutes: 50, source: 'Bloco dedicado', note: 'Revisão de rotações', date: fmtDate(addDays(TODAY, -6)) },
+      { id: 6, phaseId: 'n2', minutes: 40, source: 'Bloco dedicado', note: '', date: fmtDate(addDays(TODAY, -8)) },
+      { id: 7, phaseId: 'math', minutes: 35, source: 'Faculdade', note: 'Aula de álgebra linear', date: fmtDate(addDays(TODAY, -10)) },
+    ],
+    editingId: null, editDraft: null,
+    timerRunning: false, timerPaused: false, timerSeconds: 0, timerPhaseId: '', timerSource: 'Bloco dedicado',
+    manualPhaseId: '', manualMinutes: '', manualSource: 'Bloco dedicado', manualDate: fmtDate(TODAY), manualNote: '',
+  };
+
+  darkTheme = { bg: '#0B0F12', surface1: '#12181C', surface2: '#1A2228', borderSubtle: '#263038', borderStrong: '#38454F', textPrimary: '#F2F5F6', textSecondary: '#9BA8B0', textTertiary: '#64727C', accent: '#4DD8C0', accentDeep: '#1E6F63' };
+  lightTheme = { bg: '#F7F9FA', surface1: '#FFFFFF', surface2: '#EEF2F3', borderSubtle: '#E1E7EA', borderStrong: '#C7D0D5', textPrimary: '#12181C', textSecondary: '#4A565E', textTertiary: '#7A868E', accent: '#4DD8C0', accentDeep: '#1E6F63' };
+
+  componentDidMount() { this._tick = setInterval(() => { if (this.state.timerRunning && !this.state.timerPaused) this.setState(s => ({ timerSeconds: s.timerSeconds + 1 })); }, 1000); }
+  componentWillUnmount() { clearInterval(this._tick); }
+
+  toggleTheme = () => this.setState(s => ({ isDark: !s.isDark }));
+  formatClock(sec) { const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60; const p = (n) => String(n).padStart(2, '0'); return h > 0 ? `${p(h)}:${p(m)}:${p(s)}` : `${p(m)}:${p(s)}`; }
+
+  onTimerPhaseChange = (e) => { const phaseId = e.target.value; const opts = sourceOptionsFor(phaseId); const valid = opts.find(o => o.value === this.state.timerSource && !o.disabled); this.setState({ timerPhaseId: phaseId, timerSource: valid ? this.state.timerSource : 'Bloco dedicado' }); };
+  onTimerSourceChange = (e) => this.setState({ timerSource: e.target.value });
+  startTimer = () => this.setState({ timerRunning: true, timerPaused: false, timerSeconds: 0 });
+  pauseTimer = () => this.setState({ timerPaused: true });
+  resumeTimer = () => this.setState({ timerPaused: false });
+  stopTimer = () => {
+    const minutes = Math.max(1, Math.round(this.state.timerSeconds / 60));
+    this.setState(s => ({
+      timerRunning: false, timerPaused: false, timerSeconds: 0,
+      sessions: [{ id: Date.now(), phaseId: s.timerPhaseId, minutes, source: s.timerSource, note: '', date: fmtDate(TODAY) }, ...s.sessions],
+    }));
+  };
+
+  onManualPhaseChange = (e) => { const phaseId = e.target.value; const opts = sourceOptionsFor(phaseId); const valid = opts.find(o => o.value === this.state.manualSource && !o.disabled); this.setState({ manualPhaseId: phaseId, manualSource: valid ? this.state.manualSource : 'Bloco dedicado' }); };
+  onManualSourceChange = (e) => this.setState({ manualSource: e.target.value });
+  onManualMinutesChange = (e) => this.setState({ manualMinutes: e.target.value });
+  onManualDateChange = (e) => this.setState({ manualDate: e.target.value });
+  onManualNoteChange = (e) => this.setState({ manualNote: e.target.value });
+  setManualChip = (mins) => () => this.setState({ manualMinutes: String(mins) });
+  submitManual = () => {
+    const { manualPhaseId, manualMinutes, manualSource, manualDate, manualNote } = this.state;
+    const minutes = parseInt(manualMinutes, 10);
+    if (!manualPhaseId || !minutes) return;
+    this.setState(s => ({
+      sessions: [{ id: Date.now(), phaseId: manualPhaseId, minutes, source: manualSource, note: manualNote, date: manualDate || fmtDate(TODAY) }, ...s.sessions],
+      manualPhaseId: '', manualMinutes: '', manualSource: 'Bloco dedicado', manualNote: '', manualDate: fmtDate(TODAY),
+    }));
+  };
+
+  toggleEdit = (id) => () => this.setState(s => {
+    if (s.editingId === id) return { editingId: null, editDraft: null };
+    const sess = s.sessions.find(x => x.id === id);
+    return { editingId: id, editDraft: { ...sess } };
+  });
+  editField = (field) => (e) => this.setState(s => ({ editDraft: { ...s.editDraft, [field]: e.target.value } }));
+  saveEdit = () => this.setState(s => ({ sessions: s.sessions.map(x => x.id === s.editingId ? { ...s.editDraft, minutes: parseInt(s.editDraft.minutes, 10) || x.minutes } : x), editingId: null, editDraft: null }));
+  cancelEdit = () => this.setState({ editingId: null, editDraft: null });
+
+  renderVals() {
+    const isDark = this.state.isDark;
+    const t = isDark ? this.darkTheme : this.lightTheme;
+    const thumbLeft = isDark ? '2px' : '19px';
+
+    const weekStart = addDays(TODAY, -TODAY.getDay() + 1);
+    const weekMinutes = this.state.sessions.filter(s => new Date(s.date) >= weekStart).reduce((a, s) => a + s.minutes, 0);
+    const weekSummaryText = `${Math.floor(weekMinutes / 60)}h${String(weekMinutes % 60).padStart(2, '0')} esta semana`;
+
+    const timerPhase = PHASES.find(p => p.id === this.state.timerPhaseId);
+    const timerSourceOptions = sourceOptionsFor(this.state.timerPhaseId);
+    const timer = {
+      running: this.state.timerRunning && !this.state.timerPaused,
+      label: this.formatClock(this.state.timerSeconds),
+      displayStyle: `font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:700;font-variant-numeric:tabular-nums`,
+      dotStyle: `width:8px;height:8px;border-radius:50%;background:${t.accent};animation:vetor-pulse 2s ease-in-out infinite`,
+      phaseId: this.state.timerPhaseId, onPhaseChange: this.onTimerPhaseChange,
+      source: this.state.timerSource, onSourceChange: this.onTimerSourceChange, sourceOptions: timerSourceOptions,
+      locked: this.state.timerRunning,
+      showTrunkHint: !!(timerPhase && timerPhase.trunk),
+      showStart: !this.state.timerRunning, startDisabled: !this.state.timerPhaseId,
+      showPause: this.state.timerRunning && !this.state.timerPaused,
+      showResume: this.state.timerRunning && this.state.timerPaused,
+      showStop: this.state.timerRunning,
+      onStart: this.startTimer, onPause: this.pauseTimer, onResume: this.resumeTimer, onStop: this.stopTimer,
+      startBtnStyle: `height:38px;padding:0 16px;border-radius:6px;border:none;background:${this.state.timerPhaseId ? t.accent : t.surface2};color:${this.state.timerPhaseId ? '#06231F' : t.textTertiary};font-size:13px;font-weight:600;cursor:${this.state.timerPhaseId ? 'pointer' : 'not-allowed'}`,
+      secondaryBtnStyle: `height:38px;padding:0 16px;border-radius:6px;border:1px solid ${t.borderStrong};background:none;color:${t.textPrimary};font-size:13px;font-weight:600;cursor:pointer`,
+      stopBtnStyle: `height:38px;padding:0 16px;border-radius:6px;border:none;background:${t.surface2};color:${t.textPrimary};font-size:13px;font-weight:600;cursor:pointer`,
+    };
+
+    const manualSourceOptions = sourceOptionsFor(this.state.manualPhaseId);
+    const manual = {
+      phaseId: this.state.manualPhaseId, onPhaseChange: this.onManualPhaseChange,
+      source: this.state.manualSource, onSourceChange: this.onManualSourceChange, sourceOptions: manualSourceOptions,
+      minutes: this.state.manualMinutes, onMinutesChange: this.onManualMinutesChange,
+      date: this.state.manualDate, onDateChange: this.onManualDateChange,
+      note: this.state.manualNote, onNoteChange: this.onManualNoteChange,
+      durationChips: [15, 30, 45, 60, 90].map(m => ({ label: `${m}m`, onClick: this.setManualChip(m), style: `padding:6px 10px;border-radius:6px;font-size:12px;background:${String(m) === this.state.manualMinutes ? t.accent : t.surface2};color:${String(m) === this.state.manualMinutes ? '#06231F' : t.textSecondary};cursor:pointer;font-family:'JetBrains Mono',monospace` })),
+      submitDisabled: !this.state.manualPhaseId || !parseInt(this.state.manualMinutes, 10),
+      onSubmit: this.submitManual,
+      submitBtnStyle: `height:40px;border-radius:6px;border:none;background:${!this.state.manualPhaseId || !parseInt(this.state.manualMinutes, 10) ? t.surface2 : t.accent};color:${!this.state.manualPhaseId || !parseInt(this.state.manualMinutes, 10) ? t.textTertiary : '#06231F'};font-size:13px;font-weight:600;cursor:pointer;margin-top:4px`,
+    };
+
+    const byDate = {};
+    this.state.sessions.forEach(s => { (byDate[s.date] = byDate[s.date] || []).push(s); });
+    const historyGroups = Object.keys(byDate).sort((a, b) => b.localeCompare(a)).map(date => {
+      const sessions = byDate[date];
+      const total = sessions.reduce((a, s) => a + s.minutes, 0);
+      const d = new Date(date);
+      const label = date === fmtDate(TODAY) ? 'Hoje' : date === fmtDate(addDays(TODAY, -1)) ? 'Ontem' : d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
+      return {
+        label, total: `${Math.floor(total / 60)}h${String(total % 60).padStart(2, '0')}`,
+        headerStyle: `display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:${t.textSecondary};text-transform:capitalize`,
+        totalStyle: `font-family:'JetBrains Mono',monospace;font-size:12px;color:${t.textTertiary};font-weight:400`,
+        sessions: sessions.map(s => {
+          const phase = PHASES.find(p => p.id === s.phaseId);
+          const editing = this.state.editingId === s.id;
+          const draft = editing ? this.state.editDraft : null;
+          return {
+            editing, hasNote: !!s.note, note: s.note, minutesText: `${s.minutes}m`, source: s.source, phaseName: phase ? phase.name : s.phaseId,
+            phaseDotStyle: `width:6px;height:6px;border-radius:50%;background:${phase ? phase.color : t.textTertiary};flex-shrink:0`,
+            phaseNameStyle: `font-size:13px;color:${t.textPrimary};flex:1`,
+            sourceTagStyle: `font-size:11px;color:${t.textSecondary};background:${t.surface2};padding:3px 8px;border-radius:999px;flex-shrink:0`,
+            noteStyle: `font-size:12px;color:${t.textTertiary};flex:1`,
+            minutesStyle: `font-family:'JetBrains Mono',monospace;font-size:12px;color:${t.textSecondary};flex-shrink:0;width:40px;text-align:right`,
+            rowStyle: `display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid ${t.borderSubtle};border-radius:7px;background:${t.surface1};cursor:pointer`,
+            onToggleEdit: this.toggleEdit(s.id),
+            editBoxStyle: `display:flex;flex-direction:column;gap:8px;padding:12px;margin-top:4px;border:1px solid ${t.borderStrong};border-radius:7px;background:${t.surface2}`,
+            editPhaseId: draft ? draft.phaseId : '', onEditPhaseChange: this.editField('phaseId'),
+            editMinutes: draft ? String(draft.minutes) : '', onEditMinutesChange: this.editField('minutes'),
+            editSource: draft ? draft.source : '', onEditSourceChange: this.editField('source'),
+            editSourceOptions: sourceOptionsFor(draft ? draft.phaseId : ''),
+            editNote: draft ? draft.note : '', onEditNoteChange: this.editField('note'),
+            onSave: this.saveEdit, onCancel: this.cancelEdit,
+            saveBtnStyle: `height:34px;padding:0 14px;border-radius:6px;border:none;background:${t.accent};color:#06231F;font-size:12px;font-weight:600;cursor:pointer`,
+            cancelBtnStyle: `height:34px;padding:0 14px;border-radius:6px;border:none;background:none;color:${t.textSecondary};font-size:12px;cursor:pointer`,
+          };
+        }),
+      };
+    });
+
+    return {
+      theme: t, themeLabel: isDark ? 'Escuro' : 'Claro', toggleTheme: this.toggleTheme,
+      thumbStyle: `width:16px;height:16px;border-radius:50%;background:${t.accent};position:absolute;top:2px;left:${thumbLeft};transition:left 200ms cubic-bezier(0.32,0.72,0,1)`,
+      navItems: [
+        { icon: '◈', label: 'Mapa', href: 'VETOR - Mapa.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+        { icon: '▤', label: 'Painel', href: 'VETOR - Painel.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+        { icon: '☰', label: 'Tarefas', href: 'VETOR - Tarefas.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+        { icon: '◷', label: 'Sessões', href: 'VETOR - Sessões.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:${t.surface2};color:${t.accent};cursor:pointer;text-decoration:none` },
+        { icon: '⚙', label: 'Ajustes', href: 'VETOR - Ajustes.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+      ],
+      weekSummaryText,
+      cardStyle: `border:1px solid ${t.borderSubtle};border-radius:8px;background:${t.surface1};padding:20px`,
+      cardTitleStyle: `font-size:15px;font-weight:600`,
+      selectStyle: `height:38px;padding:0 10px;border-radius:6px;border:1px solid ${t.borderSubtle};background:${t.surface2};color:${t.textPrimary};font-size:13px`,
+      manualMinutesInputStyle: `width:70px;height:32px;padding:0 8px;border-radius:6px;border:1px solid ${t.borderSubtle};background:${t.surface2};color:${t.textPrimary};font-size:12px;font-family:'JetBrains Mono',monospace`,
+      trunkHintStyle: `font-size:11px;color:${t.textTertiary};line-height:1.4`,
+      phaseOptions: PHASES,
+      timer, manual, historyGroups,
+      historyTitleStyle: `font-size:15px;font-weight:600`,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+*{box-sizing:border-box}
+@keyframes vetor-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes vetor-toast-in{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+</style>
+</helmet>
+<div data-screen-label="Mapa" style="height:100vh;width:100vw;overflow:hidden;display:flex;position:relative;background:{{theme.bg}};color:{{theme.textPrimary}};font-family:'Inter',sans-serif">
+
+  <div style="width:72px;flex-shrink:0;background:{{theme.surface1}};border-right:1px solid {{theme.borderSubtle}};display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:6px">
+    <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;color:{{theme.accent}};margin-bottom:18px">V</div>
+    <sc-for list="{{navItems}}" as="nav" hint-placeholder-count="5">
+      <a href="{{nav.href}}" title="{{nav.label}}" style="{{nav.style}}"><div style="font-size:19px;line-height:1">{{nav.icon}}</div></a>
+    </sc-for>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;min-width:0;position:relative">
+
+    <div style="height:56px;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid {{theme.borderSubtle}};z-index:15">
+      <div style="display:flex;align-items:baseline;gap:14px;flex-shrink:0;min-width:0;overflow:hidden">
+        <div style="font-size:15px;font-weight:600;white-space:nowrap;flex-shrink:0">Mapa</div>
+        <div style="font-size:13px;color:{{theme.textTertiary}};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Trilha Técnica — roadmap de estudos</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <button onClick="{{undoRedo.onUndo}}" disabled="{{undoRedo.undoDisabled}}" title="Desfazer (Ctrl+Z)" style="{{undoRedo.undoBtnStyle}}">↶</button>
+        <button onClick="{{undoRedo.onRedo}}" disabled="{{undoRedo.redoDisabled}}" title="Refazer (Ctrl+Shift+Z)" style="{{undoRedo.redoBtnStyle}}">↷</button>
+        <button onClick="{{onOpenResetConfirm}}" style="{{resetBtnStyle}}">⟲ Redefinir posições</button>
+        <div style="position:relative">
+          <button onClick="{{layoutMenu.toggle}}" style="{{layoutMenu.btnStyle}}">Predefinições ▾</button>
+          <sc-if value="{{layoutMenu.open}}" hint-placeholder-val="{{false}}">
+            <div onMouseDown="{{stopProp}}" style="{{layoutMenu.dropdownStyle}}">
+              <div style="{{layoutMenu.sectionLabelStyle}}">Salvar predefinição</div>
+              <div style="display:flex;gap:6px;padding:0 10px 10px">
+                <input value="{{layoutMenu.presetName}}" onChange="{{layoutMenu.onPresetNameChange}}" onKeyDown="{{layoutMenu.onPresetNameKeyDown}}" placeholder="Nome da predefinição" style="{{layoutMenu.inputStyle}}"></input>
+                <button onClick="{{layoutMenu.onSavePreset}}" style="{{layoutMenu.saveBtnStyle}}">Salvar</button>
+              </div>
+              <sc-if value="{{layoutMenu.hasPresets}}" hint-placeholder-val="{{false}}">
+                <div style="{{layoutMenu.dividerStyle}}"></div>
+                <div style="{{layoutMenu.sectionLabelStyle}}">Predefinições salvas</div>
+                <sc-for list="{{layoutMenu.presets}}" as="pr" hint-placeholder-count="2">
+                  <div style="{{pr.rowStyle}}">
+                    <div onClick="{{pr.onLoad}}" style="{{pr.nameStyle}}">{{pr.name}}</div>
+                    <div onClick="{{pr.onDelete}}" style="{{pr.deleteStyle}}">×</div>
+                  </div>
+                </sc-for>
+              </sc-if>
+              <sc-if value="{{layoutMenu.hasPresetsNot}}" hint-placeholder-val="{{true}}">
+                <div style="{{layoutMenu.emptyStyle}}">Nenhuma predefinição salva ainda.</div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+        <a href="VETOR - Criar Fase.dc.html" style="{{newPhaseBtnStyle}}">+ Nova fase</a>
+        <button onClick="{{toggleTheme}}" style="display:flex;align-items:center;gap:10px;background:none;border:none;cursor:pointer;padding:4px;flex-shrink:0">
+          <span style="font-size:13px;color:{{theme.textSecondary}};white-space:nowrap">{{themeLabel}}</span>
+          <span style="width:40px;height:22px;border-radius:11px;background:{{theme.surface2}};border:1px solid {{theme.borderSubtle}};position:relative">
+            <span style="{{thumbStyle}}"></span>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <div ref="{{wrapperRef}}" onWheel="{{onWheel}}" onMouseDown="{{onCanvasMouseDown}}" onMouseMove="{{onCanvasMouseMove}}" onMouseUp="{{onCanvasMouseUp}}" onMouseLeave="{{onCanvasMouseUp}}" style="flex:1;position:relative;overflow:hidden;cursor:{{canvasCursor}}">
+
+      <div style="position:absolute;inset:0;background-image:radial-gradient(circle,{{gridDotColor}} 1px,transparent 1px);background-size:{{gridSize}}px {{gridSize}}px;background-position:{{gridPos}}"></div>
+
+      <div style="{{contentTransformStyle}}">
+        <svg width="{{CONTENT_W}}" height="{{CONTENT_H}}" style="position:absolute;top:0;left:0;overflow:visible;pointer-events:none">
+          <defs>
+            <marker id="vetorArrowActive" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="{{theme.accent}}"></path>
+            </marker>
+            <marker id="vetorArrowInactive" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="{{theme.borderStrong}}"></path>
+            </marker>
+            <marker id="vetorArrowSelected" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#D97757"></path>
+            </marker>
+          </defs>
+          <sc-for list="{{edgesView}}" as="e" hint-placeholder-count="11">
+            <path d="{{e.d}}" stroke="transparent" stroke-width="16" fill="none" onMouseDown="{{stopProp}}" onClick="{{e.onClick}}" style="cursor:pointer;pointer-events:stroke"></path>
+            <path d="{{e.d}}" stroke="{{e.color}}" stroke-width="{{e.strokeWidth}}" fill="none" stroke-dasharray="{{e.dash}}" marker-end="{{e.markerUrl}}" style="{{e.pathStyle}}"></path>
+          </sc-for>
+          <sc-if value="{{connectLine}}" hint-placeholder-val="{{false}}">
+            <path d="{{connectLine.d}}" stroke="{{theme.accent}}" stroke-width="2" fill="none" stroke-dasharray="5 5"></path>
+          </sc-if>
+        </svg>
+
+        <sc-for list="{{nodesView}}" as="n" hint-placeholder-count="11">
+          <div data-node="true" data-node-id="{{n.id}}" onMouseDown="{{n.onCardMouseDown}}" onMouseEnter="{{n.onMouseEnter}}" onMouseLeave="{{clearHover}}" onClick="{{n.onClick}}" style="{{n.cardStyle}}">
+            <div style="{{n.numberBadgeStyle}}">{{n.orderNumber}}</div>
+            <div style="{{n.barStyle}}"></div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding-left:11px">
+              <div style="{{n.nameStyle}}">{{n.name}}</div>
+              <svg width="26" height="26" viewBox="0 0 26 26" style="flex-shrink:0">
+                <circle cx="13" cy="13" r="10.5" fill="none" stroke="{{theme.borderSubtle}}" stroke-width="2.5"></circle>
+                <circle cx="13" cy="13" r="10.5" fill="none" stroke="{{n.ringColor}}" stroke-width="2.5" stroke-dasharray="{{n.ringDasharray}}" stroke-dashoffset="{{n.ringDashoffset}}" stroke-linecap="round" transform="rotate(-90 13 13)"></circle>
+              </svg>
+            </div>
+            <div style="{{n.metaStyle}}">{{n.metaText}}</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:9px;margin-left:11px;flex-wrap:wrap">
+              <div style="{{n.classPillStyle}}">{{n.classLabel}}</div>
+              <sc-if value="{{n.showBranchBadge}}" hint-placeholder-val="{{false}}">
+                <div style="{{n.branchBadgeStyle}}">{{n.branchBadgeText}}</div>
+              </sc-if>
+            </div>
+            <div onMouseDown="{{n.onConnectMouseDown}}" title="Arraste para ligar a outra fase" style="{{n.handleTopStyle}}"></div>
+            <div onMouseDown="{{n.onConnectMouseDown}}" title="Arraste para ligar a outra fase" style="{{n.handleRightStyle}}"></div>
+            <div onMouseDown="{{n.onConnectMouseDown}}" title="Arraste para ligar a outra fase" style="{{n.handleBottomStyle}}"></div>
+            <div onMouseDown="{{n.onConnectMouseDown}}" title="Arraste para ligar a outra fase" style="{{n.handleLeftStyle}}"></div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="{{legendStyle}}">
+        <sc-for list="{{semanticStates}}" as="st" hint-placeholder-count="7">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:6px;height:6px;border-radius:50%;background:{{st.hex}};flex-shrink:0"></div>
+            <div style="font-size:11px;color:{{theme.textSecondary}}">{{st.label}}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="position:absolute;bottom:20px;right:20px;display:flex;flex-direction:column;gap:10px;align-items:flex-end">
+        <div style="{{minimapStyle}}">
+          <sc-for list="{{minimapNodes}}" as="m" hint-placeholder-count="11">
+            <div style="{{m.style}}"></div>
+          </sc-for>
+          <div style="{{minimapViewportStyle}}"></div>
+        </div>
+        <div style="{{glassControlRow}}">
+          <button onClick="{{zoomOut}}" style="{{ctrlBtnStyle}}">–</button>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:{{theme.textSecondary}};width:42px;text-align:center;font-variant-numeric:tabular-nums">{{zoomLabel}}</div>
+          <button onClick="{{zoomIn}}" style="{{ctrlBtnStyle}}">+</button>
+          <div style="width:1px;height:20px;background:{{theme.borderSubtle}};margin:0 4px"></div>
+          <button onClick="{{fitToScreen}}" title="Enquadrar (F)" style="{{ctrlBtnStyle}}">⤢</button>
+        </div>
+      </div>
+
+      <sc-if value="{{edgeMenu}}" hint-placeholder-val="{{false}}">
+        <div onMouseDown="{{stopProp}}" style="{{edgeMenu.style}}">
+          <button onMouseDown="{{stopProp}}" onClick="{{edgeMenu.onDelete}}" style="{{edgeMenu.btnStyle}}">Remover ligação</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{hoverPreview}}" hint-placeholder-val="{{false}}">
+        <div style="{{hoverPreview.wrapStyle}}">
+          <div style="{{hoverPreview.boxStyle}}">
+            <div style="{{hoverPreview.classPillStyle}}">{{hoverPreview.classLabel}}</div>
+            <div style="{{hoverPreview.nameStyle}}">{{hoverPreview.name}}</div>
+            <div style="{{hoverPreview.statusRowStyle}}"><span style="{{hoverPreview.dotStyle}}"></span>{{hoverPreview.status}} · {{hoverPreview.duration}}</div>
+            <div style="{{hoverPreview.progressStyle}}">{{hoverPreview.progressText}}</div>
+            <sc-if value="{{hoverPreview.hasProjects}}" hint-placeholder-val="{{false}}">
+              <div style="{{hoverPreview.projectsLabelStyle}}">Projetos sugeridos</div>
+              <div style="{{hoverPreview.projectsTextStyle}}">{{hoverPreview.projectsText}}</div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <div style="{{panelStyle}}">
+    <sc-if value="{{selected}}" hint-placeholder-val="{{false}}">
+      <div style="display:flex;flex-direction:column;height:100%">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:24px 24px 18px;border-bottom:1px solid {{theme.borderSubtle}};flex-shrink:0">
+          <div style="flex:1;min-width:0">
+            <div style="{{selected.classPillStyle}}">{{selected.classLabel}}</div>
+            <sc-if value="{{selected.editing}}" hint-placeholder-val="{{false}}">
+              <input value="{{selected.editName}}" onChange="{{selected.onEditNameChange}}" style="{{selected.editNameInputStyle}}"></input>
+            </sc-if>
+            <sc-if value="{{selected.editingNot}}" hint-placeholder-val="{{true}}">
+              <div style="font-size:20px;font-weight:700;letter-spacing:-0.01em;margin-top:12px;max-width:280px">{{selected.name}}</div>
+            </sc-if>
+            <div style="display:flex;align-items:center;gap:7px;margin-top:10px">
+              <div style="width:6px;height:6px;border-radius:50%;background:{{selected.statusColor}};flex-shrink:0"></div>
+              <div style="font-size:13px;color:{{theme.textSecondary}}">{{selected.status}}</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:{{theme.textTertiary}}">· {{selected.duration}}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            <button onClick="{{selected.onToggleEdit}}" style="{{selected.editBtnStyle}}">{{selected.editBtnLabel}}</button>
+            <button onClick="{{closePanel}}" style="background:none;border:none;color:{{theme.textTertiary}};font-size:22px;cursor:pointer;line-height:1;padding:2px">×</button>
+          </div>
+        </div>
+
+        <div style="padding:22px 24px;display:flex;align-items:center;gap:20px;border-bottom:1px solid {{theme.borderSubtle}};flex-shrink:0">
+          <svg width="60" height="60" viewBox="0 0 60 60" style="flex-shrink:0">
+            <circle cx="30" cy="30" r="25" fill="none" stroke="{{theme.borderSubtle}}" stroke-width="5"></circle>
+            <circle cx="30" cy="30" r="25" fill="none" stroke="{{selected.ringColor}}" stroke-width="5" stroke-dasharray="{{selected.ringDasharrayBig}}" stroke-dashoffset="{{selected.ringDashoffsetBig}}" stroke-linecap="round" transform="rotate(-90 30 30)"></circle>
+          </svg>
+          <div>
+            <div style="font-size:22px;font-weight:700;font-variant-numeric:tabular-nums">{{selected.doneCount}} de {{selected.totalCount}}</div>
+            <div style="font-size:13px;color:{{theme.textSecondary}}">critérios de domínio cumpridos</div>
+          </div>
+        </div>
+
+        <div style="flex:1;overflow-y:auto;padding:20px 24px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:{{theme.textTertiary}};margin-bottom:12px">Critério de domínio</div>
+          <sc-if value="{{selected.editing}}" hint-placeholder-val="{{false}}">
+            <input value="{{selected.draftCriterion}}" onChange="{{selected.onDraftCriterionChange}}" onKeyDown="{{selected.onDraftCriterionKeyDown}}" placeholder="Adicionar item e pressionar Enter…" style="{{selected.draftCriterionInputStyle}}"></input>
+          </sc-if>
+          <sc-for list="{{selected.criteria}}" as="c" hint-placeholder-count="4">
+            <div style="{{c.rowStyle}}">
+              <div onClick="{{c.onToggle}}" style="{{c.checkboxStyle}}">
+                <sc-if value="{{c.done}}" hint-placeholder-val="{{false}}"><span style="font-size:11px;color:#06231F;font-weight:700">✓</span></sc-if>
+              </div>
+              <div style="{{c.textStyle}}">{{c.label}}</div>
+              <sc-if value="{{c.showOptional}}" hint-placeholder-val="{{false}}">
+                <div style="font-size:10px;color:{{theme.textTertiary}};flex-shrink:0">opcional</div>
+              </sc-if>
+              <sc-if value="{{c.showRemove}}" hint-placeholder-val="{{false}}">
+                <div onClick="{{c.onRemove}}" style="{{c.removeStyle}}">×</div>
+              </sc-if>
+            </div>
+          </sc-for>
+
+          <sc-if value="{{selected.showProjectsSection}}" hint-placeholder-val="{{false}}">
+            <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:{{theme.textTertiary}};margin:24px 0 12px">Projetos sugeridos</div>
+            <sc-if value="{{selected.editing}}" hint-placeholder-val="{{false}}">
+              <input value="{{selected.draftProject}}" onChange="{{selected.onDraftProjectChange}}" onKeyDown="{{selected.onDraftProjectKeyDown}}" placeholder="Adicionar projeto e pressionar Enter…" style="{{selected.draftProjectInputStyle}}"></input>
+            </sc-if>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
+              <sc-for list="{{selected.projectChips}}" as="p" hint-placeholder-count="3">
+                <div style="{{p.style}}">{{p.label}}<sc-if value="{{p.showRemove}}" hint-placeholder-val="{{false}}"><span onClick="{{p.onRemove}}" style="{{p.removeStyle}}">×</span></sc-if></div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="padding:18px 24px;border-top:1px solid {{theme.borderSubtle}};flex-shrink:0;display:flex;flex-direction:column;gap:8px">
+          <sc-if value="{{selected.editing}}" hint-placeholder-val="{{false}}">
+            <button onClick="{{selected.onSaveEdit}}" style="{{selected.saveEditBtnStyle}}">Salvar alterações</button>
+          </sc-if>
+          <sc-if value="{{selected.showConclude}}" hint-placeholder-val="{{true}}">
+            <button disabled="{{selected.concludeDisabled}}" onClick="{{concludeSelected}}" style="{{selected.concludeBtnStyle}}">{{selected.concludeBtnLabel}}</button>
+          </sc-if>
+          <sc-if value="{{selected.showReopen}}" hint-placeholder-val="{{false}}">
+            <button onClick="{{selected.onReopen}}" style="{{selected.reopenBtnStyle}}">Reabrir fase</button>
+          </sc-if>
+          <sc-if value="{{selected.showSecondaryActions}}" hint-placeholder-val="{{false}}">
+            <div style="display:flex;gap:8px">
+              <button onClick="{{selected.onTogglePause}}" style="{{selected.pauseBtnStyle}}">{{selected.pauseBtnLabel}}</button>
+              <button onClick="{{selected.onToggleReview}}" style="{{selected.reviewBtnStyle}}">{{selected.reviewBtnLabel}}</button>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="{{hotbar.wrapStyle}}">
+    <div onClick="{{hotbar.toggleTimer}}" style="{{hotbar.timerBtnStyle}}">
+      <sc-if value="{{hotbar.running}}" hint-placeholder-val="{{false}}">
+        <span style="{{hotbar.dotStyle}}"></span>
+      </sc-if>
+      <span style="{{hotbar.timerTextStyle}}">{{hotbar.timerLabel}}</span>
+    </div>
+    <sc-if value="{{hotbar.showExtras}}" hint-placeholder-val="{{true}}">
+      <div style="{{hotbar.dividerStyle}}"></div>
+      <div onClick="{{hotbar.focusClick}}" style="{{hotbar.focusBtnStyle}}">{{hotbar.focusName}}</div>
+      <div style="{{hotbar.dividerStyle}}"></div>
+      <div style="position:relative;display:flex;align-items:center">
+        <button onClick="{{hotbar.togglePlus}}" style="{{hotbar.iconBtnStyle}}">+</button>
+        <sc-if value="{{hotbar.plusOpen}}" hint-placeholder-val="{{false}}">
+          <div style="{{hotbar.plusMenuStyle}}">
+            <sc-for list="{{hotbar.plusItems}}" as="pi" hint-placeholder-count="3">
+              <a href="{{pi.href}}" style="{{pi.style}}">{{pi.label}}</a>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+      <button onClick="{{hotbar.openPalette}}" style="{{hotbar.iconBtnStyle}}">⌘K</button>
+    </sc-if>
+    <sc-if value="{{hotbar.running}}" hint-placeholder-val="{{false}}">
+      <div style="{{hotbar.progressTrackStyle}}"><div style="{{hotbar.progressFillStyle}}"></div></div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{toast}}" hint-placeholder-val="{{false}}">
+    <div style="{{toastStyle}}">{{toast.message}}</div>
+  </sc-if>
+
+  <sc-if value="{{palette.open}}" hint-placeholder-val="{{false}}">
+    <div onClick="{{palette.closeBackdrop}}" style="{{palette.backdropStyle}}">
+      <div onClick="{{stopProp}}" style="{{palette.panelStyle}}">
+        <input value="{{palette.query}}" onChange="{{palette.onQueryChange}}" placeholder="Buscar fases…" style="{{palette.inputStyle}}"></input>
+        <div style="{{palette.listWrapStyle}}">
+          <sc-for list="{{palette.results}}" as="r" hint-placeholder-count="5">
+            <div onClick="{{r.onClick}}" style="{{r.rowStyle}}">
+              <div style="{{r.dotStyle}}"></div>
+              <div style="{{r.nameStyle}}">{{r.name}}</div>
+              <div style="{{r.statusStyle}}">{{r.status}}</div>
+            </div>
+          </sc-for>
+          <sc-if value="{{palette.empty}}" hint-placeholder-val="{{false}}">
+            <div style="{{palette.emptyStyle}}">Nada encontrado</div>
+          </sc-if>
+        </div>
+        <div style="{{palette.hintsRowStyle}}">
+          <div style="{{palette.hintStyle}}">⌘N nova tarefa</div>
+          <div style="{{palette.hintStyle}}">⌘⇧N nova fase</div>
+          <div style="{{palette.hintStyle}}">Espaço iniciar/pausar</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{confirmReset}}" hint-placeholder-val="{{false}}">
+    <div onClick="{{onCancelReset}}" style="{{confirmBackdropStyle}}">
+      <div onClick="{{stopProp}}" style="{{confirmBoxStyle}}">
+        <div style="{{confirmTitleStyle}}">Redefinir posições?</div>
+        <div style="{{confirmTextStyle}}">Isso vai restaurar todas as fases e ligações para a disposição original do mapa. Essa ação pode ser desfeita com Ctrl+Z. Suas predefinições salvas não são apagadas.</div>
+        <div style="display:flex;gap:10px;margin-top:18px">
+          <button onClick="{{onCancelReset}}" style="{{confirmCancelBtnStyle}}">Cancelar</button>
+          <button onClick="{{onConfirmReset}}" style="{{confirmOkBtnStyle}}">Sim, redefinir</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const STATUS_COLORS = {
+  'Bloqueada': '#64727C', 'Disponível': '#5B9BD5', 'Em andamento': '#4DD8C0', 'Aguardando validação': '#D9A441',
+  'Concluída': '#5FB87A', 'Pausada': '#8A7CA8', 'Em revisão': '#D97757',
+};
+const BRANCH_COLOR = '#7C93E8';
+const CONTENT_W = 1000, CONTENT_H = 1600;
+const NODE_W = 240, NODE_H = 140;
+const PRESETS_KEY = 'vetor_mapa_presets_v1';
+
+function crit(id, label, done, required) { return { id, label, done, required }; }
+
+class Component extends DCLogic {
+  wrapperRef = React.createRef();
+
+  nodesData = [
+    { id: 'n0', name: 'Fase 0 — Começar do zero', classification: 'branch', concluded: true, duration: '1–2 meses', x: 340, y: 70,
+      criteria: [crit(1,'Criar sozinho um pequeno programa usando variáveis',true,true),crit(2,'Usar if e switch',true,true),crit(3,'Usar for e while',true,true),crit(4,'Usar funções',true,true),crit(5,'Usar listas básicas',true,false)],
+      projects: ['Calculadora','Conversor de temperatura','Sistema de notas','Contador','Jogo de adivinhação','Lista de tarefas','Cronômetro'] },
+    { id: 'n1a', name: 'Fase 1A — OO em Python', classification: 'branch', concluded: true, duration: 'meses 2–6', x: 340, y: 250,
+      criteria: [crit(1,'Criar um projeto sem tutorial passo a passo',true,true),crit(2,'Dividir código em classes',true,true),crit(3,'Encontrar bugs usando debugger',true,true),crit(4,'Ler mensagens de erro',true,true),crit(5,'Pesquisar documentação sozinho',true,true),crit(6,'Explicar o que cada parte do próprio código faz',true,false)],
+      projects: ['Gerenciador de tarefas','Sistema de inventário','Simulação orientada a objetos'] },
+    { id: 'math', name: 'Trilha paralela — Matemática', classification: 'branch', concluded: false, duration: 'meses 2–24', x: 60, y: 430,
+      criteria: [crit(1,'Explicar e aplicar posição (x, y, z)',true,true),crit(2,'Calcular distância entre pontos',true,true),crit(3,'Determinar direção entre objetos',true,true),crit(4,'Normalizar um vetor',false,true),crit(5,'Calcular produto escalar',false,true),crit(6,'Calcular produto vetorial',false,true),crit(7,'Diferenciar transformação local de global',false,false),crit(8,'Aplicar rotação',false,true),crit(9,'Aplicar interpolação',false,false)],
+      projects: [] },
+    { id: 'n2', name: 'Fase 2 — Git e rotina profissional', classification: 'branch', concluded: false, duration: 'a partir do mês 3', x: 340, y: 430,
+      criteria: [crit(1,'Usar Git em todo projeto (init, add, commit, push/pull)',true,true),crit(2,'Escrever README',true,true),crit(3,'Documentar decisões',false,true),crit(4,'Organizar pastas',false,false),crit(5,'Manter histórico do projeto',false,true)],
+      projects: [] },
+    { id: 'n3', name: 'Fase 3 — Engenharia de Software', classification: 'branch', concluded: false, duration: 'meses 6–14', x: 340, y: 610,
+      criteria: [crit(1,'Construir aplicação de médio porte com múltiplos módulos',false,true),crit(2,'Implementar persistência de dados',false,true),crit(3,'Escrever testes automatizados',false,true),crit(4,'Manter Git, README e tratamento de erros',false,false)],
+      projects: ['Projeto de conclusão — aplicação de médio porte'] },
+    { id: 'n1b', name: 'Fase 1B — OO em C#', classification: 'trunk', concluded: false, duration: 'meses 12–15', x: 640, y: 610,
+      criteria: [crit(1,'Criar um projeto C# sem tutorial passo a passo',false,true),crit(2,'Reconhecer rapidamente diferenças de sintaxe Python/C#',false,true),crit(3,'Usar o debugger do Visual Studio/Rider',false,true),crit(4,'Ler e entender documentação oficial do C#/.NET',false,false)],
+      projects: ['Reescrita em C# do projeto de tradução'] },
+    { id: 'n4', name: 'Fase 4 — Unity e mundo 3D', classification: 'trunk', concluded: false, duration: 'meses 12–24', x: 640, y: 790,
+      criteria: [crit(1,'Criar sozinho uma aplicação 3D interativa simples',false,true),crit(2,'Otimizar para manter execução fluida no hardware-alvo',false,true)],
+      projects: ['Sala 3D interativa','Simulador simples','Sandbox de física'] },
+    { id: 'n5', name: 'Fase 5 — XR', classification: 'trunk', concluded: false, duration: 'meses 20–32', x: 640, y: 970,
+      criteria: [crit(1,'Entender conceitos universais de VR/AR/MR/XR',false,true),crit(2,'Usar XR Interaction Toolkit e OpenXR',false,true),crit(3,'Aplicar princípios de UX espacial',false,false)],
+      projects: ['Laboratório de interação','Treinamento imersivo','Visualizador 3D'] },
+    { id: 'n6', name: 'Fase 6 — AR e ambiente físico', classification: 'trunk', concluded: false, duration: 'meses 28–40', x: 640, y: 1150,
+      criteria: [crit(1,'Escanear ambiente e detectar piso/mesas',false,true),crit(2,'Posicionar objeto virtual e manter posição',false,true),crit(3,'Ocluir corretamente por objetos reais',false,true)],
+      projects: ['Aplicativo de posicionamento espacial'] },
+    { id: 'n7', name: 'Fase 7 — Eng. de Computação Espacial', classification: 'trunk', concluded: false, duration: 'meses 36–48', x: 640, y: 1330,
+      criteria: [crit(1,'Dominar tracking 3DoF/6DoF e SLAM',false,true),crit(2,'Trabalhar sensores IMU e LiDAR',false,true),crit(3,'Aplicar arquitetura: state machine, DI, object pooling',false,false)],
+      projects: [] },
+    { id: 'n8', name: 'Fase 8 — Especialização', classification: 'trunk', concluded: false, duration: 'a partir do ano 4', x: 640, y: 1510,
+      criteria: [crit(1,'Escolher trilha (A, B, C ou D)',false,true),crit(2,'Concluir projeto na trilha escolhida',false,true)],
+      projects: ['Projeto de especialização (trilha escolhida)'] },
+  ];
+
+  edgesData = [
+    { from: 'n0', to: 'n1a' }, { from: 'n0', to: 'n2' }, { from: 'n0', to: 'math' },
+    { from: 'n1a', to: 'n1b' }, { from: 'n1a', to: 'n3' },
+    { from: 'n3', to: 'n4' }, { from: 'n1b', to: 'n4' },
+    { from: 'n4', to: 'n5' }, { from: 'n5', to: 'n6' }, { from: 'n6', to: 'n7' }, { from: 'n7', to: 'n8' },
+  ];
+
+  darkTheme = { bg: '#0B0F12', surface1: '#12181C', surface2: '#1A2228', borderSubtle: '#263038', borderStrong: '#38454F', textPrimary: '#F2F5F6', textSecondary: '#9BA8B0', textTertiary: '#64727C', accent: '#4DD8C0', accentDeep: '#1E6F63' };
+  lightTheme = { bg: '#F7F9FA', surface1: '#FFFFFF', surface2: '#EEF2F3', borderSubtle: '#E1E7EA', borderStrong: '#C7D0D5', textPrimary: '#12181C', textSecondary: '#4A565E', textTertiary: '#7A868E', accent: '#4DD8C0', accentDeep: '#1E6F63' };
+
+  freshNodes() { return this.nodesData.map(n => ({ ...n, paused: false, inReview: false, criteria: n.criteria.map(c => ({ ...c })), projects: n.projects.slice() })); }
+  freshEdges() { return this.edgesData.map(e => ({ ...e })); }
+  cloneNodes(nodes) { return nodes.map(n => ({ ...n, criteria: n.criteria.map(c => ({ ...c })), projects: n.projects.slice() })); }
+  cloneEdges(edges) { return edges.map(e => ({ ...e })); }
+
+  state = {
+    isDark: true,
+    nodes: this.freshNodes(),
+    edges: this.freshEdges(),
+    pan: { x: 60, y: 60 }, zoom: 0.7,
+    isPanning: false, hoveredId: null, selectedId: null, draggingNodeId: null,
+    hoverPreviewId: null, hoverPreviewStyle: '',
+    hotbarRunning: false, hotbarSeconds: 0, hotbarFocusId: 'n2', hotbarCompact: false,
+    plusOpen: false, paletteOpen: false, paletteQuery: '',
+    editingPanel: false, editName: '', editDraftCriterion: '', editDraftProject: '',
+    connectFromId: null, connectPreview: null,
+    selectedEdgeKey: null, edgeMenuScreenPos: null,
+    layoutMenuOpen: false, presetName: '', presets: [],
+    confirmReset: false, toast: null,
+    history: { past: [], future: [] },
+  };
+
+  componentDidMount() {
+    this.fitToScreen();
+    try { this.setState({ presets: JSON.parse(localStorage.getItem(PRESETS_KEY)) || [] }); } catch (err) {}
+
+    this._onKey = (e) => {
+      if (e.target && e.target.tagName === 'INPUT') return;
+      const cmdK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k';
+      if (cmdK) { e.preventDefault(); this.setState(s => ({ paletteOpen: !s.paletteOpen, plusOpen: false })); return; }
+      const isZ = e.key.toLowerCase() === 'z';
+      if ((e.metaKey || e.ctrlKey) && isZ && !e.shiftKey) { e.preventDefault(); this.undo(); return; }
+      if ((e.metaKey || e.ctrlKey) && (e.key.toLowerCase() === 'y' || (isZ && e.shiftKey))) { e.preventDefault(); this.redo(); return; }
+      if (e.key === 'Escape') {
+        if (this.state.confirmReset) this.setState({ confirmReset: false });
+        else if (this.state.paletteOpen) this.setState({ paletteOpen: false });
+        else if (this.state.plusOpen) this.setState({ plusOpen: false });
+        else if (this.state.layoutMenuOpen) this.setState({ layoutMenuOpen: false });
+        else this.setState({ selectedId: null });
+        return;
+      }
+      if (this.state.paletteOpen) return;
+      if (e.key === 'f' || e.key === 'F') this.fitToScreen();
+      else if (e.key === '.') this.centerOnNode('n2');
+    };
+    this._onResize = () => this.forceUpdate();
+    this._tick = setInterval(() => { if (this.state.hotbarRunning) this.setState(s => ({ hotbarSeconds: s.hotbarSeconds + 1 })); }, 1000);
+    window.addEventListener('keydown', this._onKey);
+    window.addEventListener('resize', this._onResize);
+
+    this._onWinMouseMove = (e) => {
+      if (this._dragNode) {
+        const zoom = this.state.zoom;
+        const dx = (e.clientX - this._dragNode.startX) / zoom;
+        const dy = (e.clientY - this._dragNode.startY) / zoom;
+        if (Math.abs(e.clientX - this._dragNode.startX) > 3 || Math.abs(e.clientY - this._dragNode.startY) > 3) this._dragNode.moved = true;
+        const nx = this._dragNode.nodeX + dx, ny = this._dragNode.nodeY + dy;
+        this.setState(s => ({ nodes: s.nodes.map(n => n.id === this._dragNode.id ? { ...n, x: nx, y: ny } : n) }));
+      } else if (this.state.connectFromId) {
+        const rect = this.getRect();
+        const cx = (e.clientX - rect.left - this.state.pan.x) / this.state.zoom;
+        const cy = (e.clientY - rect.top - this.state.pan.y) / this.state.zoom;
+        this.setState({ connectPreview: { x: cx, y: cy } });
+      }
+    };
+    this._onWinMouseUp = (e) => {
+      if (this._dragNode) {
+        if (this._dragNode.moved) {
+          const preNodes = this._dragNode.preNodes;
+          this.setState(s => ({ history: { past: [...s.history.past.slice(-49), { nodes: preNodes, edges: this.cloneEdges(s.edges) }], future: [] } }));
+          this._suppressNextClick = true;
+        }
+        this._dragNode = null;
+        this.setState({ draggingNodeId: null });
+        return;
+      }
+      if (this.state.connectFromId) {
+        const fromId = this.state.connectFromId;
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const cardEl = el && el.closest('[data-node-id]');
+        const targetId = cardEl ? cardEl.getAttribute('data-node-id') : null;
+        if (targetId && targetId !== fromId) {
+          const dup = this.state.edges.some(e2 => (e2.from === fromId && e2.to === targetId) || (e2.from === targetId && e2.to === fromId));
+          if (!dup) this.mutate(s => ({ edges: [...s.edges, { from: fromId, to: targetId }] }));
+        }
+        this.setState({ connectFromId: null, connectPreview: null });
+      }
+    };
+    window.addEventListener('mousemove', this._onWinMouseMove);
+    window.addEventListener('mouseup', this._onWinMouseUp);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this._onKey);
+    window.removeEventListener('resize', this._onResize);
+    window.removeEventListener('mousemove', this._onWinMouseMove);
+    window.removeEventListener('mouseup', this._onWinMouseUp);
+    clearInterval(this._tick);
+    clearTimeout(this._toastTimer);
+  }
+
+  mutate(mutateFn) {
+    this.setState(s => {
+      const patch = mutateFn(s);
+      if (!patch) return null;
+      const snapshot = { nodes: this.cloneNodes(s.nodes), edges: this.cloneEdges(s.edges) };
+      const past = [...s.history.past.slice(-49), snapshot];
+      return { ...patch, history: { past, future: [] } };
+    });
+  }
+  undo = () => this.setState(s => {
+    if (!s.history.past.length) return null;
+    const prev = s.history.past[s.history.past.length - 1];
+    const past = s.history.past.slice(0, -1);
+    const future = [{ nodes: this.cloneNodes(s.nodes), edges: this.cloneEdges(s.edges) }, ...s.history.future].slice(0, 50);
+    return { nodes: prev.nodes, edges: prev.edges, history: { past, future }, selectedId: null, editingPanel: false, selectedEdgeKey: null, edgeMenuScreenPos: null };
+  });
+  redo = () => this.setState(s => {
+    if (!s.history.future.length) return null;
+    const next = s.history.future[0];
+    const future = s.history.future.slice(1);
+    const past = [...s.history.past, { nodes: this.cloneNodes(s.nodes), edges: this.cloneEdges(s.edges) }].slice(-50);
+    return { nodes: next.nodes, edges: next.edges, history: { past, future }, selectedId: null, editingPanel: false, selectedEdgeKey: null, edgeMenuScreenPos: null };
+  });
+
+  showToast(message) {
+    const id = Date.now();
+    this.setState({ toast: { id, message } });
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => this.setState(s => (s.toast && s.toast.id === id ? { toast: null } : null)), 3200);
+  }
+
+  formatTime(sec) {
+    const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+  }
+  toggleTimer = () => this.setState(s => ({ hotbarRunning: !s.hotbarRunning }));
+  togglePlus = () => this.setState(s => ({ plusOpen: !s.plusOpen, paletteOpen: false }));
+  closePlus = () => this.setState({ plusOpen: false });
+  openPalette = () => this.setState({ paletteOpen: true, plusOpen: false, paletteQuery: '' });
+  closePalette = () => this.setState({ paletteOpen: false });
+  onPaletteQueryChange = (e) => this.setState({ paletteQuery: e.target.value });
+  focusPhaseClick = () => this.setState({ selectedId: this.state.hotbarFocusId });
+
+  toggleTheme = () => this.setState(s => ({ isDark: !s.isDark }));
+
+  getRect() {
+    const el = this.wrapperRef.current;
+    if (el) return el.getBoundingClientRect();
+    return { width: 1100, height: 700, left: 0, top: 0 };
+  }
+
+  clampZoom(z) { return Math.max(0.15, Math.min(1.8, z)); }
+
+  fitToScreen = () => {
+    const rect = this.getRect();
+    const z = this.clampZoom(Math.min((rect.width - 160) / CONTENT_W, (rect.height - 160) / CONTENT_H, 1.05));
+    this.setState({ zoom: z, pan: { x: (rect.width - CONTENT_W * z) / 2, y: (rect.height - CONTENT_H * z) / 2 } });
+  };
+
+  centerOnNode(id) {
+    const rect = this.getRect();
+    const node = this.state.nodes.find(n => n.id === id);
+    if (!node) return;
+    const z = this.state.zoom;
+    const cx = node.x + NODE_W / 2, cy = node.y + NODE_H / 2;
+    this.setState({ pan: { x: rect.width / 2 - cx * z, y: rect.height / 2 - cy * z } });
+  }
+
+  zoomAround(newZoomRaw, px, py) {
+    const z = this.state.zoom, pan = this.state.pan;
+    const newZoom = this.clampZoom(newZoomRaw);
+    const cx = (px - pan.x) / z, cy = (py - pan.y) / z;
+    this.setState({ zoom: newZoom, pan: { x: px - cx * newZoom, y: py - cy * newZoom } });
+  }
+
+  onWheel = (e) => {
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) {
+      const rect = this.getRect();
+      const px = e.clientX - rect.left, py = e.clientY - rect.top;
+      this.zoomAround(this.state.zoom * (1 - e.deltaY * 0.0015), px, py);
+    } else {
+      this.setState(s => ({ pan: { x: s.pan.x - e.deltaX, y: s.pan.y - e.deltaY } }));
+    }
+  };
+  zoomIn = () => { const r = this.getRect(); this.zoomAround(this.state.zoom * 1.25, r.width / 2, r.height / 2); };
+  zoomOut = () => { const r = this.getRect(); this.zoomAround(this.state.zoom * 0.8, r.width / 2, r.height / 2); };
+
+  onCanvasMouseDown = (e) => {
+    this._panStart = { x: e.clientX, y: e.clientY, panX: this.state.pan.x, panY: this.state.pan.y };
+    this.setState({ isPanning: true, layoutMenuOpen: false, selectedEdgeKey: null, edgeMenuScreenPos: null });
+  };
+  onCanvasMouseMove = (e) => {
+    if (!this.state.isPanning || !this._panStart) return;
+    const dx = e.clientX - this._panStart.x, dy = e.clientY - this._panStart.y;
+    this.setState({ pan: { x: this._panStart.panX + dx, y: this._panStart.panY + dy } });
+  };
+  onCanvasMouseUp = () => { this.setState({ isPanning: false }); this._panStart = null; };
+  stopProp = (e) => e.stopPropagation();
+  clearHover = () => this.setState({ hoveredId: null, hoverPreviewId: null });
+  onNodeMouseEnter = (id) => (e) => {
+    this.setState({ hoveredId: id });
+    if (this.state.connectFromId || this._dragNode) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const width = 260;
+    let left = rect.right + 12;
+    if (left + width > window.innerWidth - 12) left = rect.left - width - 12;
+    if (left < 12) left = 12;
+    let top = rect.top;
+    if (top + 210 > window.innerHeight - 12) top = Math.max(12, window.innerHeight - 222);
+    this.setState({ hoverPreviewId: id, hoverPreviewStyle: `position:fixed;left:${left}px;top:${top}px;width:${width}px;z-index:45;pointer-events:none` });
+  };
+  makeSelect = (id) => (e) => {
+    e.stopPropagation();
+    if (this._suppressNextClick) { this._suppressNextClick = false; return; }
+    this.setState({ selectedId: id, editingPanel: false });
+  };
+  closePanel = () => this.setState({ selectedId: null, editingPanel: false });
+
+  onNodeMouseDown = (id) => (e) => {
+    e.stopPropagation();
+    const node = this.state.nodes.find(n => n.id === id);
+    if (!node || node.classification === 'trunk') return;
+    this._dragNode = { id, startX: e.clientX, startY: e.clientY, nodeX: node.x, nodeY: node.y, moved: false, preNodes: this.cloneNodes(this.state.nodes) };
+    this.setState({ draggingNodeId: id, hoverPreviewId: null });
+  };
+  onConnectMouseDown = (id) => (e) => {
+    e.stopPropagation();
+    this.setState({ connectFromId: id, connectPreview: null, hoverPreviewId: null });
+  };
+
+  isLocked(node, nodes, edges) {
+    const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+    const prereqs = edges.filter(e => e.to === node.id).map(e => e.from);
+    return prereqs.some(id => !(byId[id] && byId[id].concluded));
+  }
+  computeStatus(node, nodes, edges) {
+    if (this.isLocked(node, nodes, edges)) return 'Bloqueada';
+    if (node.concluded) return 'Concluída';
+    if (node.paused) return 'Pausada';
+    if (node.inReview) return 'Em revisão';
+    const hasRequired = node.criteria.some(c => c.required);
+    const requiredDone = hasRequired && node.criteria.filter(c => c.required).every(c => c.done);
+    if (requiredDone) return 'Aguardando validação';
+    if (node.criteria.some(c => c.done)) return 'Em andamento';
+    return 'Disponível';
+  }
+
+  toggleEditPanel = () => {
+    const turningOn = !this.state.editingPanel;
+    if (!turningOn) { this.setState({ editingPanel: false }); return; }
+    const node = this.state.nodes.find(n => n.id === this.state.selectedId);
+    if (node && node.concluded) {
+      const selId = this.state.selectedId;
+      this.mutate(s => {
+        const n2 = s.nodes.find(x => x.id === selId);
+        if (!n2 || !n2.concluded) return null;
+        return { nodes: s.nodes.map(x => x.id === n2.id ? { ...x, concluded: false } : x) };
+      });
+      this.showToast('Fase reaberta para edição — conclua novamente quando terminar.');
+    }
+    this.setState({ editingPanel: true, editName: node ? node.name : '', editDraftCriterion: '', editDraftProject: '' });
+  };
+  onEditNameChange = (e) => this.setState({ editName: e.target.value });
+  onEditDraftCriterionChange = (e) => this.setState({ editDraftCriterion: e.target.value });
+  onEditDraftCriterionKeyDown = (e) => {
+    if (e.key !== 'Enter') return;
+    const label = this.state.editDraftCriterion.trim();
+    if (!label) return;
+    const nodeId = this.state.selectedId;
+    this.mutate(s => ({ nodes: s.nodes.map(n => n.id !== nodeId ? n : { ...n, criteria: [...n.criteria, { id: Date.now(), label, done: false, required: true }] }) }));
+    this.setState({ editDraftCriterion: '' });
+  };
+  removeCriterionFromPanel = (nodeId, critId) => () => this.mutate(s => ({ nodes: s.nodes.map(n => n.id !== nodeId ? n : { ...n, criteria: n.criteria.filter(c => c.id !== critId) }) }));
+  onEditDraftProjectChange = (e) => this.setState({ editDraftProject: e.target.value });
+  onEditDraftProjectKeyDown = (e) => {
+    if (e.key !== 'Enter') return;
+    const label = this.state.editDraftProject.trim();
+    if (!label) return;
+    const nodeId = this.state.selectedId;
+    this.mutate(s => ({ nodes: s.nodes.map(n => n.id !== nodeId ? n : { ...n, projects: [...n.projects, label] }) }));
+    this.setState({ editDraftProject: '' });
+  };
+  removeProjectFromPanel = (nodeId, index) => () => this.mutate(s => ({ nodes: s.nodes.map(n => n.id !== nodeId ? n : { ...n, projects: n.projects.filter((_, i) => i !== index) }) }));
+  saveEditPanel = () => {
+    const nodeId = this.state.selectedId;
+    const name = this.state.editName.trim();
+    if (name) this.mutate(s => ({ nodes: s.nodes.map(n => n.id !== nodeId ? n : { ...n, name }) }));
+    this.setState({ editingPanel: false });
+  };
+
+  makeToggleCriterion = (nodeId, critId) => () => this.mutate(s => {
+    const node = s.nodes.find(n => n.id === nodeId);
+    if (!node) return null;
+    if (node.concluded || this.isLocked(node, s.nodes, s.edges)) return null;
+    return { nodes: s.nodes.map(n => n.id !== nodeId ? n : { ...n, criteria: n.criteria.map(c => c.id === critId ? { ...c, done: !c.done } : c) }) };
+  });
+
+  concludeSelected = () => this.mutate(s => {
+    const node = s.nodes.find(n => n.id === s.selectedId);
+    if (!node || this.isLocked(node, s.nodes, s.edges)) return null;
+    const requiredMissing = node.criteria.filter(c => c.required && !c.done).length;
+    if (requiredMissing > 0) return null;
+    return { nodes: s.nodes.map(n => n.id === s.selectedId ? { ...n, concluded: true, paused: false, inReview: false } : n) };
+  });
+  reopenSelected = () => this.mutate(s => ({ nodes: s.nodes.map(n => n.id === s.selectedId ? { ...n, concluded: false } : n) }));
+  togglePause = () => this.mutate(s => {
+    const node = s.nodes.find(n => n.id === s.selectedId);
+    if (!node || node.concluded || this.isLocked(node, s.nodes, s.edges)) return null;
+    return { nodes: s.nodes.map(n => n.id === s.selectedId ? { ...n, paused: !n.paused } : n) };
+  });
+  toggleReview = () => this.mutate(s => {
+    const node = s.nodes.find(n => n.id === s.selectedId);
+    if (!node || node.concluded || this.isLocked(node, s.nodes, s.edges)) return null;
+    return { nodes: s.nodes.map(n => n.id === s.selectedId ? { ...n, inReview: !n.inReview } : n) };
+  });
+
+  onEdgeClick = (fromId, toId) => (e) => {
+    e.stopPropagation();
+    const key = `${fromId}__${toId}`;
+    this.setState({ selectedEdgeKey: key, edgeMenuScreenPos: { x: e.clientX, y: e.clientY }, layoutMenuOpen: false });
+  };
+  deleteSelectedEdge = () => {
+    const key = this.state.selectedEdgeKey;
+    if (!key) return;
+    this.mutate(s => ({ edges: s.edges.filter(e => `${e.from}__${e.to}` !== key) }));
+    this.setState({ selectedEdgeKey: null, edgeMenuScreenPos: null });
+  };
+
+  toggleLayoutMenu = () => this.setState(s => ({ layoutMenuOpen: !s.layoutMenuOpen }));
+  onPresetNameChange = (e) => this.setState({ presetName: e.target.value });
+  onOpenResetConfirm = () => this.setState({ confirmReset: true, layoutMenuOpen: false });
+  onCancelReset = () => this.setState({ confirmReset: false });
+  onConfirmReset = () => {
+    this.mutate(() => ({ nodes: this.freshNodes(), edges: this.freshEdges() }));
+    this.setState({ confirmReset: false, selectedId: null, editingPanel: false });
+    this.showToast('Posições e ligações redefinidas para o padrão.');
+  };
+  persistPresets(presets) { try { localStorage.setItem(PRESETS_KEY, JSON.stringify(presets)); } catch (err) {} }
+  savePreset = () => {
+    const name = this.state.presetName.trim();
+    if (!name) return;
+    this.setState(s => {
+      const preset = { id: Date.now(), name, positions: s.nodes.map(n => ({ id: n.id, x: n.x, y: n.y })), edges: s.edges.map(e => ({ ...e })) };
+      const presets = [...s.presets, preset];
+      this.persistPresets(presets);
+      return { presets, presetName: '' };
+    });
+    this.showToast('Predefinição salva.');
+  };
+  onPresetNameKeyDown = (e) => { if (e.key === 'Enter') this.savePreset(); };
+  loadPreset = (preset) => () => {
+    this.mutate(s => ({
+      nodes: s.nodes.map(n => { const pos = preset.positions.find(p => p.id === n.id); return pos ? { ...n, x: pos.x, y: pos.y } : n; }),
+      edges: preset.edges.map(e => ({ ...e })),
+    }));
+    this.setState({ layoutMenuOpen: false });
+  };
+  deletePreset = (id) => (e) => {
+    e.stopPropagation();
+    this.setState(s => { const presets = s.presets.filter(p => p.id !== id); this.persistPresets(presets); return { presets }; });
+  };
+
+  buildNodeView(n, hoveredId, t, nodes, edges, selectedId, draggingNodeId, connectFromId, orderNumber) {
+    const total = n.criteria.length, done = n.criteria.filter(c => c.done).length;
+    const ratio = total ? done / total : 0;
+    const circ = 2 * Math.PI * 10.5;
+    const isTrunk = n.classification === 'trunk';
+    const suppressDim = !!draggingNodeId || !!connectFromId;
+    const connected = (!suppressDim && hoveredId) ? this.getConnectedIds(hoveredId, edges) : null;
+    const dimmed = connected && hoveredId !== n.id && !connected.has(n.id);
+    const isHovered = hoveredId === n.id;
+    const isSelected = selectedId === n.id;
+    const isDraggingThis = draggingNodeId === n.id;
+    const isConnectTarget = connectFromId && connectFromId !== n.id && isHovered;
+    const status = this.computeStatus(n, nodes, edges);
+    const statusColor = STATUS_COLORS[status];
+    const childCount = edges.filter(e => e.from === n.id).length;
+    let borderStyle = `1px solid ${isTrunk ? t.borderStrong : t.borderSubtle}`;
+    if (isConnectTarget) borderStyle = `2px dashed ${t.accent}`;
+    else if (isSelected) borderStyle = `2px solid ${t.accent}`;
+    let shadow = isTrunk ? '0 0 0 1px rgba(77,216,192,0.08),0 12px 28px -10px rgba(0,0,0,0.4)' : 'none';
+    if (isSelected) shadow = '0 0 0 4px rgba(77,216,192,0.18),0 12px 28px -10px rgba(0,0,0,0.5)';
+    if (isDraggingThis) shadow = '0 24px 48px -12px rgba(0,0,0,0.6)';
+    const handleBase = `position:absolute;width:14px;height:14px;border-radius:50%;background:${t.accent};border:2px solid ${isTrunk ? t.surface2 : t.surface1};cursor:crosshair;z-index:3;opacity:${isHovered ? 1 : 0};transition:opacity 140ms ease`;
+    return {
+      id: n.id, name: n.name,
+      onClick: this.makeSelect(n.id), onMouseEnter: this.onNodeMouseEnter(n.id),
+      onCardMouseDown: this.onNodeMouseDown(n.id), onConnectMouseDown: this.onConnectMouseDown(n.id),
+      orderNumber: String(orderNumber).padStart(2, '0'),
+      numberBadgeStyle: `position:absolute;left:-9px;top:-9px;width:22px;height:22px;border-radius:50%;background:${t.bg};border:1px solid ${t.borderStrong};display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:${t.textSecondary};z-index:2`,
+      metaText: `${n.duration.toUpperCase()} · ${done}/${total}`,
+      ringColor: statusColor, ringDasharray: `${circ}`, ringDashoffset: `${circ * (1 - ratio)}`,
+      cardStyle: `position:absolute;left:${n.x}px;top:${n.y}px;width:${NODE_W}px;height:${NODE_H}px;border-radius:6px;padding:14px 14px 12px;background:${isTrunk ? t.surface2 : t.surface1};border:${borderStyle};cursor:${isTrunk ? 'pointer' : isDraggingThis ? 'grabbing' : 'grab'};transition:${isDraggingThis ? 'none' : 'opacity 220ms ease,border-color 160ms ease,box-shadow 200ms ease'};opacity:${dimmed ? 0.4 : 1};box-shadow:${shadow}`,
+      barStyle: `position:absolute;left:0;top:0;bottom:0;width:3px;background:${statusColor}`,
+      nameStyle: `font-size:14px;font-weight:600;letter-spacing:-0.005em;line-height:1.25;color:${isTrunk ? t.textPrimary : t.textSecondary};display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden`,
+      metaStyle: `font-family:'JetBrains Mono',monospace;font-size:11px;color:${t.textTertiary};margin-top:10px;padding-left:11px`,
+      classLabel: isTrunk ? 'TRONCO PRINCIPAL · FIXO' : 'RAMO DE APOIO',
+      classPillStyle: `display:inline-flex;align-items:center;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:0.06em;color:${isTrunk ? t.accent : BRANCH_COLOR};background:${isTrunk ? 'rgba(77,216,192,0.12)' : 'rgba(124,147,232,0.16)'};width:fit-content`,
+      showBranchBadge: childCount > 1, branchBadgeText: `${childCount} caminhos`,
+      branchBadgeStyle: `display:inline-flex;align-items:center;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:0.02em;color:${t.textSecondary};background:${t.surface2};border:1px solid ${t.borderSubtle};width:fit-content`,
+      handleTopStyle: `${handleBase};left:50%;top:-7px;transform:translateX(-50%)`,
+      handleBottomStyle: `${handleBase};left:50%;bottom:-7px;transform:translateX(-50%)`,
+      handleLeftStyle: `${handleBase};top:50%;left:-7px;transform:translateY(-50%)`,
+      handleRightStyle: `${handleBase};top:50%;right:-7px;transform:translateY(-50%)`,
+    };
+  }
+
+  getConnectedIds(hoveredId, edges) {
+    const s = new Set([hoveredId]);
+    edges.forEach(e => { if (e.from === hoveredId) s.add(e.to); if (e.to === hoveredId) s.add(e.from); });
+    return s;
+  }
+
+  buildEdgePath(from, to) {
+    const fc = { x: from.x + NODE_W / 2, y: from.y + NODE_H / 2 };
+    const tc = { x: to.x + NODE_W / 2, y: to.y + NODE_H / 2 };
+    const dx = tc.x - fc.x, dy = tc.y - fc.y;
+    let x1, y1, x2, y2;
+    if (Math.abs(dy) >= Math.abs(dx)) {
+      if (dy >= 0) { x1 = fc.x; y1 = from.y + NODE_H; x2 = tc.x; y2 = to.y; }
+      else { x1 = fc.x; y1 = from.y; x2 = tc.x; y2 = to.y + NODE_H; }
+      const b = Math.max(50, Math.abs(y2 - y1) * 0.5) * (dy >= 0 ? 1 : -1);
+      return `M${x1},${y1} C${x1},${y1 + b} ${x2},${y2 - b} ${x2},${y2}`;
+    }
+    if (dx >= 0) { x1 = from.x + NODE_W; y1 = fc.y; x2 = to.x; y2 = tc.y; }
+    else { x1 = from.x; y1 = fc.y; x2 = to.x + NODE_W; y2 = tc.y; }
+    const b = Math.max(50, Math.abs(x2 - x1) * 0.5) * (dx >= 0 ? 1 : -1);
+    return `M${x1},${y1} C${x1 + b},${y1} ${x2 - b},${y2} ${x2},${y2}`;
+  }
+
+  buildHoverPreview(t, nodes, edges) {
+    if (!this.state.hoverPreviewId || this.state.draggingNodeId || this.state.connectFromId) return null;
+    const n = nodes.find(x => x.id === this.state.hoverPreviewId);
+    if (!n) return null;
+    const status = this.computeStatus(n, nodes, edges);
+    const statusColor = STATUS_COLORS[status];
+    const total = n.criteria.length, done = n.criteria.filter(c => c.done).length;
+    const isTrunk = n.classification === 'trunk';
+    return {
+      wrapStyle: this.state.hoverPreviewStyle,
+      boxStyle: `background:${t.surface1};border:1px solid ${t.borderStrong};border-radius:8px;padding:14px;box-shadow:0 20px 40px -10px rgba(0,0,0,0.5)`,
+      classPillStyle: `display:inline-flex;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:0.06em;margin-bottom:8px;color:${isTrunk ? t.accent : BRANCH_COLOR};background:${isTrunk ? 'rgba(77,216,192,0.12)' : 'rgba(124,147,232,0.16)'}`,
+      classLabel: isTrunk ? 'TRONCO PRINCIPAL' : 'RAMO DE APOIO',
+      nameStyle: `font-size:14px;font-weight:600;color:${t.textPrimary};margin-bottom:8px`,
+      name: n.name,
+      statusRowStyle: `display:flex;align-items:center;gap:6px;font-size:12px;color:${t.textSecondary};margin-bottom:8px`,
+      dotStyle: `width:6px;height:6px;border-radius:50%;background:${statusColor};flex-shrink:0`,
+      status, duration: n.duration,
+      progressStyle: `font-size:12px;color:${t.textSecondary};margin-bottom:6px`,
+      progressText: `${done}/${total} critérios cumpridos`,
+      hasProjects: n.projects.length > 0,
+      projectsLabelStyle: `font-size:10px;font-weight:600;letter-spacing:0.06em;color:${t.textTertiary};margin-top:6px;text-transform:uppercase`,
+      projectsTextStyle: `font-size:12px;color:${t.textSecondary};margin-top:4px`,
+      projectsText: n.projects.slice(0, 3).join(', ') + (n.projects.length > 3 ? '…' : ''),
+    };
+  }
+
+  renderVals() {
+    const isDark = this.state.isDark;
+    const t = isDark ? this.darkTheme : this.lightTheme;
+    const nodes = this.state.nodes;
+    const edges = this.state.edges;
+    const hoveredId = this.state.hoveredId;
+    const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+
+    const nodesView = nodes.map((n, i) => this.buildNodeView(n, hoveredId, t, nodes, edges, this.state.selectedId, this.state.draggingNodeId, this.state.connectFromId, i + 1));
+
+    const suppressDim = !!this.state.draggingNodeId || !!this.state.connectFromId;
+    const connected = (!suppressDim && hoveredId) ? this.getConnectedIds(hoveredId, edges) : null;
+    const edgesView = edges.map(e => {
+      const from = byId[e.from], to = byId[e.to];
+      const key = `${e.from}__${e.to}`;
+      const isSelectedEdge = this.state.selectedEdgeKey === key;
+      const touches = connected && (connected.has(e.from) && connected.has(e.to));
+      const dim = connected && !touches;
+      return {
+        d: this.buildEdgePath(from, to),
+        color: isSelectedEdge ? '#D97757' : from.concluded ? t.accent : t.borderStrong,
+        strokeWidth: isSelectedEdge ? 3 : 2,
+        dash: from.concluded ? '' : '6 5',
+        markerUrl: isSelectedEdge ? 'url(#vetorArrowSelected)' : from.concluded ? 'url(#vetorArrowActive)' : 'url(#vetorArrowInactive)',
+        pathStyle: `opacity:${dim ? 0.2 : 1};transition:opacity 200ms ease`,
+        onClick: this.onEdgeClick(e.from, e.to),
+      };
+    });
+
+    let connectLine = null;
+    if (this.state.connectFromId && this.state.connectPreview) {
+      const from = byId[this.state.connectFromId];
+      if (from) {
+        const x1 = from.x + NODE_W / 2, y1 = from.y + NODE_H / 2;
+        connectLine = { d: `M${x1},${y1} L${this.state.connectPreview.x},${this.state.connectPreview.y}` };
+      }
+    }
+
+    let edgeMenu = null;
+    if (this.state.selectedEdgeKey && this.state.edgeMenuScreenPos) {
+      edgeMenu = {
+        onDelete: this.deleteSelectedEdge,
+        style: `position:fixed;left:${this.state.edgeMenuScreenPos.x}px;top:${this.state.edgeMenuScreenPos.y}px;transform:translate(-50%,-120%);z-index:50`,
+        btnStyle: `height:32px;padding:0 12px;border-radius:6px;border:1px solid #D97757;background:${t.surface1};color:#D97757;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;box-shadow:0 8px 20px -6px rgba(0,0,0,0.4)`,
+      };
+    }
+
+    const selectedNode = this.state.selectedId ? byId[this.state.selectedId] : null;
+    let selected = null;
+    if (selectedNode) {
+      const n = selectedNode;
+      const total = n.criteria.length, done = n.criteria.filter(c => c.done).length;
+      const requiredMissing = n.criteria.filter(c => c.required && !c.done).length;
+      const isTrunk = n.classification === 'trunk';
+      const circ = 2 * Math.PI * 25;
+      const ratio = total ? done / total : 0;
+      const status = this.computeStatus(n, nodes, edges);
+      const statusColor = STATUS_COLORS[status];
+      const locked = status === 'Bloqueada';
+      const editing = this.state.editingPanel;
+      selected = {
+        id: n.id, name: n.name, status, duration: n.duration, statusColor,
+        editing, editingNot: !editing,
+        editName: this.state.editName, onEditNameChange: this.onEditNameChange,
+        editNameInputStyle: `width:100%;height:36px;margin-top:12px;padding:0 10px;border-radius:6px;border:1px solid ${t.accent};background:${t.surface1};color:${t.textPrimary};font-size:16px;font-weight:600;box-sizing:border-box`,
+        onToggleEdit: this.toggleEditPanel,
+        editBtnStyle: `height:30px;padding:0 12px;border-radius:6px;border:1px solid ${editing ? t.accent : t.borderStrong};background:none;color:${editing ? t.accent : t.textSecondary};font-size:12px;font-weight:600;cursor:pointer`,
+        editBtnLabel: editing ? 'Editando' : 'Editar',
+        classLabel: isTrunk ? 'TRONCO PRINCIPAL · FIXO' : 'RAMO DE APOIO',
+        classPillStyle: `display:inline-flex;align-items:center;padding:4px 9px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:0.06em;color:${isTrunk ? t.accent : BRANCH_COLOR};background:${isTrunk ? 'rgba(77,216,192,0.12)' : 'rgba(124,147,232,0.16)'};width:fit-content`,
+        ringColor: statusColor, ringDasharrayBig: `${circ}`, ringDashoffsetBig: `${circ * (1 - ratio)}`,
+        doneCount: done, totalCount: total,
+        draftCriterion: this.state.editDraftCriterion, onDraftCriterionChange: this.onEditDraftCriterionChange, onDraftCriterionKeyDown: this.onEditDraftCriterionKeyDown,
+        draftCriterionInputStyle: `width:100%;height:36px;padding:0 10px;border-radius:6px;border:1px solid ${t.borderSubtle};background:${t.surface2};color:${t.textPrimary};font-size:13px;margin-bottom:10px;box-sizing:border-box`,
+        criteria: n.criteria.map(c => {
+          const canToggle = editing || (!n.concluded && !locked);
+          return {
+            id: c.id, label: c.label, done: c.done, showOptional: !c.required && !editing, showRemove: editing,
+            onToggle: canToggle ? this.makeToggleCriterion(n.id, c.id) : undefined,
+            onRemove: this.removeCriterionFromPanel(n.id, c.id),
+            rowStyle: `display:flex;align-items:center;gap:12px;padding:9px 0;transform:translateY(${c.done ? '1px' : '0'});transition:transform 220ms cubic-bezier(0.32,0.72,0,1)`,
+            checkboxStyle: `width:18px;height:18px;border-radius:4px;border:1px solid ${c.done ? t.accent : t.borderStrong};background:${c.done ? t.accent : t.surface1};display:flex;align-items:center;justify-content:center;cursor:${canToggle ? 'pointer' : 'not-allowed'};flex-shrink:0;transition:background 180ms,border-color 180ms;opacity:${canToggle ? 1 : 0.6}`,
+            textStyle: `font-size:13px;flex:1;color:${c.done ? t.textTertiary : t.textPrimary};text-decoration:${c.done ? 'line-through' : 'none'};transition:color 220ms ease`,
+            removeStyle: `color:${t.textTertiary};cursor:pointer;font-size:16px;line-height:1;flex-shrink:0`,
+          };
+        }),
+        showProjectsSection: n.projects.length > 0 || editing,
+        draftProject: this.state.editDraftProject, onDraftProjectChange: this.onEditDraftProjectChange, onDraftProjectKeyDown: this.onEditDraftProjectKeyDown,
+        draftProjectInputStyle: `width:100%;height:36px;padding:0 10px;border-radius:6px;border:1px solid ${t.borderSubtle};background:${t.surface2};color:${t.textPrimary};font-size:13px;box-sizing:border-box`,
+        projectChips: n.projects.map((p, i) => ({
+          label: p, showRemove: editing, onRemove: this.removeProjectFromPanel(n.id, i),
+          style: `display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;background:${t.surface2};border:1px solid ${t.borderSubtle};font-size:12px;color:${t.textSecondary}`,
+          removeStyle: `color:${t.textTertiary};cursor:pointer;font-size:14px;line-height:1`,
+        })),
+        showConclude: !editing && !n.concluded,
+        showReopen: !editing && n.concluded,
+        showSecondaryActions: !editing && !n.concluded && !locked,
+        concludeDisabled: requiredMissing > 0 || locked,
+        concludeBtnLabel: locked ? 'Fase bloqueada' : requiredMissing > 0 ? `Faltam ${requiredMissing} critério${requiredMissing > 1 ? 's' : ''} obrigatório${requiredMissing > 1 ? 's' : ''}` : 'Concluir fase',
+        concludeBtnStyle: `width:100%;height:44px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:${requiredMissing > 0 || locked ? 'not-allowed' : 'pointer'};background:${requiredMissing > 0 || locked ? t.surface2 : t.accent};color:${requiredMissing > 0 || locked ? t.textTertiary : '#06231F'};transition:opacity 180ms`,
+        onReopen: this.reopenSelected,
+        reopenBtnStyle: `width:100%;height:44px;border-radius:6px;border:1px solid ${t.borderStrong};background:none;font-size:13px;font-weight:600;cursor:pointer;color:${t.textPrimary}`,
+        onTogglePause: this.togglePause, pauseBtnLabel: n.paused ? 'Retomar fase' : 'Pausar fase',
+        pauseBtnStyle: `flex:1;height:38px;border-radius:6px;border:1px solid ${n.paused ? '#8A7CA8' : t.borderStrong};background:none;font-size:12px;font-weight:600;cursor:pointer;color:${n.paused ? '#8A7CA8' : t.textSecondary}`,
+        onToggleReview: this.toggleReview, reviewBtnLabel: n.inReview ? 'Remover marcação' : 'Marcar em revisão',
+        reviewBtnStyle: `flex:1;height:38px;border-radius:6px;border:1px solid ${n.inReview ? '#D97757' : t.borderStrong};background:none;font-size:12px;font-weight:600;cursor:pointer;color:${n.inReview ? '#D97757' : t.textSecondary}`,
+        onSaveEdit: this.saveEditPanel,
+        saveEditBtnStyle: `width:100%;height:44px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;background:${t.accent};color:#06231F`,
+      };
+    }
+
+    const rect = this.getRect();
+    const z = this.state.zoom, pan = this.state.pan;
+    const miniScale = Math.min(160 / CONTENT_W, 100 / CONTENT_H);
+    const minimapNodes = nodes.map(n => ({
+      style: `position:absolute;left:${n.x * miniScale}px;top:${n.y * miniScale}px;width:${Math.max(4, NODE_W * miniScale)}px;height:${Math.max(3, NODE_H * miniScale)}px;border-radius:2px;background:${STATUS_COLORS[this.computeStatus(n, nodes, edges)]};opacity:0.85`,
+    }));
+    const vx1 = (-pan.x) / z, vy1 = (-pan.y) / z, vx2 = (rect.width - pan.x) / z, vy2 = (rect.height - pan.y) / z;
+    const minimapViewportStyle = `position:absolute;left:${vx1 * miniScale}px;top:${vy1 * miniScale}px;width:${(vx2 - vx1) * miniScale}px;height:${(vy2 - vy1) * miniScale}px;border:1px solid ${t.accent};background:rgba(77,216,192,0.08);pointer-events:none`;
+
+    const glassBg = isDark ? 'rgba(18,24,28,0.6)' : 'rgba(255,255,255,0.6)';
+    const thumbLeft = isDark ? '2px' : '19px';
+    const undoDisabled = this.state.history.past.length === 0;
+    const redoDisabled = this.state.history.future.length === 0;
+
+    return {
+      theme: t, isDark, themeLabel: isDark ? 'Escuro' : 'Claro', toggleTheme: this.toggleTheme,
+      thumbStyle: `width:16px;height:16px;border-radius:50%;background:${t.accent};position:absolute;top:2px;left:${thumbLeft};transition:left 200ms cubic-bezier(0.32,0.72,0,1)`,
+      newPhaseBtnStyle: `height:32px;padding:0 14px;border-radius:6px;border:1px solid ${t.borderStrong};background:${t.surface2};color:${t.textPrimary};font-size:12px;font-weight:600;text-decoration:none;display:flex;align-items:center;white-space:nowrap;flex-shrink:0`,
+      navItems: [
+        { icon: '◈', label: 'Mapa', href: 'VETOR - Mapa.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:${t.surface2};color:${t.accent};cursor:pointer;text-decoration:none` },
+        { icon: '▤', label: 'Painel', href: 'VETOR - Painel.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+        { icon: '☰', label: 'Tarefas', href: 'VETOR - Tarefas.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+        { icon: '◷', label: 'Sessões', href: 'VETOR - Sessões.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+        { icon: '⚙', label: 'Ajustes', href: 'VETOR - Ajustes.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+      ],
+      CONTENT_W, CONTENT_H,
+      contentTransformStyle: `position:absolute;top:0;left:0;width:${CONTENT_W}px;height:${CONTENT_H}px;transform:translate(${pan.x}px,${pan.y}px) scale(${z});transform-origin:0 0`,
+      gridDotColor: isDark ? 'rgba(242,245,246,0.04)' : 'rgba(18,24,28,0.06)',
+      gridSize: Math.max(10, 24 * z), gridPos: `${pan.x % (24 * z * 0.7)}px ${pan.y % (24 * z * 0.7)}px`,
+      canvasCursor: this.state.isPanning ? 'grabbing' : 'grab',
+      nodesView, edgesView,
+      onWheel: this.onWheel, onCanvasMouseDown: this.onCanvasMouseDown, onCanvasMouseMove: this.onCanvasMouseMove, onCanvasMouseUp: this.onCanvasMouseUp,
+      wrapperRef: this.wrapperRef, stopProp: this.stopProp, clearHover: this.clearHover, makeSelect: this.makeSelect,
+      zoomIn: this.zoomIn, zoomOut: this.zoomOut, fitToScreen: this.fitToScreen, zoomLabel: `${Math.round(z * 100)}%`,
+      ctrlBtnStyle: `width:28px;height:28px;border-radius:5px;border:none;background:none;color:${t.textSecondary};font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center`,
+      glassControlRow: `display:flex;align-items:center;gap:2px;padding:6px 8px;border-radius:10px;background:${glassBg};backdrop-filter:blur(24px) saturate(180%);border:1px solid ${t.borderSubtle}`,
+      minimapStyle: `width:160px;height:100px;border-radius:8px;background:${glassBg};backdrop-filter:blur(24px) saturate(180%);border:1px solid ${t.borderSubtle};position:relative;overflow:hidden`,
+      minimapNodes, minimapViewportStyle,
+      legendStyle: `position:absolute;top:16px;left:16px;display:flex;flex-direction:column;gap:7px;padding:12px 14px;border-radius:8px;background:${glassBg};backdrop-filter:blur(24px) saturate(180%);border:1px solid ${t.borderSubtle}`,
+      semanticStates: [
+        { label: 'Bloqueada', hex: '#64727C' }, { label: 'Disponível', hex: '#5B9BD5' }, { label: 'Em andamento', hex: '#4DD8C0' },
+        { label: 'Aguard. validação', hex: '#D9A441' }, { label: 'Concluída', hex: '#5FB87A' }, { label: 'Pausada', hex: '#8A7CA8' }, { label: 'Em revisão', hex: '#D97757' },
+      ],
+      selected, connectLine, edgeMenu,
+      hoverPreview: this.buildHoverPreview(t, nodes, edges),
+      panelStyle: `position:absolute;top:56px;right:0;bottom:0;width:380px;background:${t.surface2};border-left:1px solid ${t.borderSubtle};box-shadow:${isDark ? '-20px 0 40px -10px rgba(0,0,0,0.5)' : '-20px 0 40px -10px rgba(20,40,45,0.15)'};transform:translateX(${selected ? '0' : '100%'}) scale(${selected ? '1' : '0.98'});transition:transform 240ms cubic-bezier(0.32,0.72,0,1);visibility:${selected ? 'visible' : 'hidden'};pointer-events:${selected ? 'auto' : 'none'};z-index:8`,
+      closePanel: this.closePanel, makeToggleCriterion: this.makeToggleCriterion, concludeSelected: this.concludeSelected,
+      hotbar: this.buildHotbarView(t, isDark, glassBg),
+      palette: this.buildPaletteView(t, isDark, glassBg, nodes, edges),
+      layoutMenu: this.buildLayoutMenuView(t, isDark, glassBg),
+      undoRedo: {
+        onUndo: this.undo, onRedo: this.redo, undoDisabled, redoDisabled,
+        undoBtnStyle: `width:32px;height:32px;flex-shrink:0;border-radius:6px;border:1px solid ${t.borderSubtle};background:${t.surface2};color:${undoDisabled ? t.textTertiary : t.textPrimary};font-size:15px;cursor:${undoDisabled ? 'not-allowed' : 'pointer'};opacity:${undoDisabled ? 0.45 : 1}`,
+        redoBtnStyle: `width:32px;height:32px;flex-shrink:0;border-radius:6px;border:1px solid ${t.borderSubtle};background:${t.surface2};color:${redoDisabled ? t.textTertiary : t.textPrimary};font-size:15px;cursor:${redoDisabled ? 'not-allowed' : 'pointer'};opacity:${redoDisabled ? 0.45 : 1}`,
+      },
+      onOpenResetConfirm: this.onOpenResetConfirm,
+      resetBtnStyle: `height:32px;padding:0 14px;border-radius:6px;border:1px solid #D97757;background:rgba(217,119,87,0.1);color:#D97757;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0`,
+      confirmReset: this.state.confirmReset, onCancelReset: this.onCancelReset, onConfirmReset: this.onConfirmReset,
+      confirmBackdropStyle: `position:fixed;inset:0;background:${isDark ? 'rgba(0,0,0,0.55)' : 'rgba(20,30,35,0.3)'};z-index:80;display:flex;align-items:center;justify-content:center`,
+      confirmBoxStyle: `width:420px;padding:24px;border-radius:12px;background:${t.surface1};border:1px solid ${t.borderStrong};box-shadow:0 30px 60px -12px rgba(0,0,0,0.5)`,
+      confirmTitleStyle: `font-size:17px;font-weight:700;margin-bottom:10px`,
+      confirmTextStyle: `font-size:13px;color:${t.textSecondary};line-height:1.5`,
+      confirmCancelBtnStyle: `flex:1;height:40px;border-radius:6px;border:1px solid ${t.borderStrong};background:none;color:${t.textPrimary};font-size:13px;font-weight:600;cursor:pointer`,
+      confirmOkBtnStyle: `flex:1;height:40px;border-radius:6px;border:none;background:#D97757;color:#22110B;font-size:13px;font-weight:700;cursor:pointer`,
+      toast: this.state.toast,
+      toastStyle: `position:fixed;left:50%;bottom:104px;transform:translateX(-50%);background:${t.surface1};border:1px solid ${t.borderStrong};color:${t.textPrimary};font-size:13px;padding:12px 18px;border-radius:8px;box-shadow:0 16px 32px -8px rgba(0,0,0,0.5);z-index:90;animation:vetor-toast-in 200ms cubic-bezier(0.32,0.72,0,1)`,
+    };
+  }
+
+  buildLayoutMenuView(t, isDark, glassBg) {
+    const open = this.state.layoutMenuOpen;
+    return {
+      open, toggle: this.toggleLayoutMenu,
+      btnStyle: `height:32px;padding:0 14px;border-radius:6px;border:1px solid ${open ? t.accent : t.borderStrong};background:${open ? 'rgba(77,216,192,0.1)' : t.surface2};color:${open ? t.accent : t.textPrimary};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0`,
+      dropdownStyle: `position:absolute;top:40px;right:0;width:260px;padding:10px 0;border-radius:10px;background:${glassBg};backdrop-filter:blur(24px) saturate(180%);border:1px solid ${t.borderSubtle};box-shadow:0 20px 44px -12px rgba(0,0,0,0.5);z-index:20`,
+      itemStyle: `padding:9px 14px;font-size:13px;color:${t.textPrimary};cursor:pointer`,
+      dividerStyle: `height:1px;background:${t.borderSubtle};margin:8px 0`,
+      sectionLabelStyle: `font-size:10px;font-weight:600;letter-spacing:0.06em;color:${t.textTertiary};padding:0 14px 8px;text-transform:uppercase`,
+      presetName: this.state.presetName, onPresetNameChange: this.onPresetNameChange, onPresetNameKeyDown: this.onPresetNameKeyDown,
+      inputStyle: `flex:1;height:32px;padding:0 10px;border-radius:6px;border:1px solid ${t.borderSubtle};background:${t.surface1};color:${t.textPrimary};font-size:12px;min-width:0`,
+      onSavePreset: this.savePreset,
+      saveBtnStyle: `height:32px;padding:0 12px;border-radius:6px;border:none;background:${t.accent};color:#06231F;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0`,
+      hasPresets: this.state.presets.length > 0, hasPresetsNot: this.state.presets.length === 0,
+      emptyStyle: `padding:4px 14px 4px;font-size:12px;color:${t.textTertiary}`,
+      presets: this.state.presets.map(p => ({
+        name: p.name, onLoad: this.loadPreset(p), onDelete: this.deletePreset(p.id),
+        rowStyle: `display:flex;align-items:center;justify-content:space-between;padding:7px 14px`,
+        nameStyle: `font-size:13px;color:${t.textPrimary};cursor:pointer;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap`,
+        deleteStyle: `color:${t.textTertiary};cursor:pointer;font-size:15px;line-height:1;flex-shrink:0;padding-left:8px`,
+      })),
+    };
+  }
+
+  buildHotbarView(t, isDark, glassBg) {
+    const running = this.state.hotbarRunning;
+    const compact = this.state.hotbarCompact;
+    const focusNode = this.state.nodes.find(n => n.id === this.state.hotbarFocusId);
+    const dailyGoalSec = 90 * 60;
+    const progressRatio = Math.min(1, this.state.hotbarSeconds / dailyGoalSec);
+    return {
+      running, showExtras: !compact,
+      wrapStyle: `position:fixed;left:50%;bottom:32px;transform:translateX(-50%);display:flex;align-items:center;gap:${compact ? '8px' : '4px'};height:56px;padding:0 ${compact ? '10px' : '10px'};border-radius:28px;background:${glassBg};backdrop-filter:blur(24px) saturate(180%);border:1px solid ${t.borderSubtle};box-shadow:${isDark ? '0 20px 44px -12px rgba(0,0,0,0.55)' : '0 20px 44px -12px rgba(20,40,45,0.2)'};z-index:40;transition:gap 200ms cubic-bezier(0.32,0.72,0,1),padding 200ms cubic-bezier(0.32,0.72,0,1);overflow:hidden`,
+      timerBtnStyle: `display:flex;align-items:center;gap:9px;height:40px;padding:0 14px;border-radius:20px;cursor:pointer;background:${running ? 'rgba(77,216,192,0.12)' : 'transparent'};flex-shrink:0`,
+      dotStyle: `width:6px;height:6px;border-radius:50%;background:${t.accent};animation:vetor-pulse 2s ease-in-out infinite;flex-shrink:0`,
+      timerTextStyle: `font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:${running ? t.accent : t.textSecondary};font-variant-numeric:tabular-nums;white-space:nowrap`,
+      timerLabel: running ? this.formatTime(this.state.hotbarSeconds) : 'Iniciar sessão',
+      dividerStyle: `width:1px;height:22px;background:${t.borderSubtle};flex-shrink:0`,
+      focusBtnStyle: `font-size:13px;color:${t.textPrimary};cursor:pointer;padding:0 6px;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis`,
+      focusName: focusNode ? focusNode.name : 'Nenhuma fase em foco',
+      iconBtnStyle: `width:36px;height:36px;border-radius:18px;border:none;background:none;color:${t.textSecondary};font-size:13px;font-family:'JetBrains Mono',monospace;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0`,
+      toggleTimer: this.toggleTimer, focusClick: this.focusPhaseClick, openPalette: this.openPalette, togglePlus: this.togglePlus,
+      plusOpen: this.state.plusOpen,
+      plusMenuStyle: `position:absolute;bottom:48px;left:0;min-width:200px;padding:6px;border-radius:10px;background:${glassBg};backdrop-filter:blur(24px) saturate(180%);border:1px solid ${t.borderSubtle};box-shadow:0 12px 28px -8px rgba(0,0,0,0.4);display:flex;flex-direction:column;gap:2px`,
+      plusItems: [
+        { label: 'Nova tarefa', href: 'VETOR - Tarefas.dc.html' },
+        { label: 'Nova fase', href: 'VETOR - Criar Fase.dc.html' },
+        { label: 'Registrar sessão manual', href: 'VETOR - Sessões.dc.html' },
+      ].map(item => ({
+        label: item.label, href: item.href,
+        style: `padding:9px 10px;border-radius:6px;font-size:13px;color:${t.textPrimary};cursor:pointer;text-decoration:none;display:block`,
+      })),
+      progressTrackStyle: `position:absolute;top:0;left:12px;right:12px;height:2px;background:${t.borderSubtle};overflow:hidden;border-radius:2px`,
+      progressFillStyle: `height:100%;width:${progressRatio * 100}%;background:${t.accent};transition:width 1s linear`,
+    };
+  }
+
+  buildPaletteView(t, isDark, glassBg, nodes, edges) {
+    const query = this.state.paletteQuery;
+    const filtered = nodes.filter(n => n.name.toLowerCase().includes(query.toLowerCase())).slice(0, 8);
+    const results = filtered.map(n => {
+      const status = this.computeStatus(n, nodes, edges);
+      return {
+        name: n.name, status,
+        dotStyle: `width:6px;height:6px;border-radius:50%;background:${STATUS_COLORS[status]};flex-shrink:0`,
+        nameStyle: `font-size:13px;color:${t.textPrimary};flex:1`,
+        statusStyle: `font-size:11px;color:${t.textTertiary}`,
+        rowStyle: `display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:7px;cursor:pointer`,
+        onClick: () => { this.setState({ selectedId: n.id, paletteOpen: false }); this.centerOnNode(n.id); },
+      };
+    });
+    return {
+      open: this.state.paletteOpen, query,
+      onQueryChange: this.onPaletteQueryChange, closeBackdrop: this.closePalette,
+      empty: results.length === 0,
+      backdropStyle: `position:fixed;inset:0;background:${isDark ? 'rgba(0,0,0,0.5)' : 'rgba(20,30,35,0.25)'};z-index:60;display:flex;align-items:flex-start;justify-content:center;padding-top:14vh`,
+      panelStyle: `width:560px;max-height:420px;display:flex;flex-direction:column;border-radius:14px;background:${glassBg};backdrop-filter:blur(28px) saturate(180%);border:1px solid ${t.borderSubtle};box-shadow:0 30px 60px -12px rgba(0,0,0,0.5);overflow:hidden`,
+      inputStyle: `height:52px;padding:0 18px;border:none;border-bottom:1px solid ${t.borderSubtle};background:transparent;color:${t.textPrimary};font-size:15px;outline:none;flex-shrink:0`,
+      listWrapStyle: `flex:1;overflow-y:auto;padding:8px`,
+      results,
+      emptyStyle: `padding:24px;text-align:center;font-size:13px;color:${t.textTertiary}`,
+      hintsRowStyle: `display:flex;gap:16px;padding:12px 18px;border-top:1px solid ${t.borderSubtle};flex-shrink:0`,
+      hintStyle: `font-family:'JetBrains Mono',monospace;font-size:11px;color:${t.textTertiary}`,
+    };
+  }
+}
+</script>
+</body>
+</html>

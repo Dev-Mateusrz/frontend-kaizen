@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>body{margin:0}*{box-sizing:border-box}</style>
+</helmet>
+<div data-screen-label="Ajustes" style="height:100vh;width:100vw;overflow:hidden;display:flex;background:{{theme.bg}};color:{{theme.textPrimary}};font-family:'Inter',sans-serif">
+
+  <div style="width:72px;flex-shrink:0;background:{{theme.surface1}};border-right:1px solid {{theme.borderSubtle}};display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:6px">
+    <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;color:{{theme.accent}};margin-bottom:18px">V</div>
+    <sc-for list="{{navItems}}" as="nav" hint-placeholder-count="5">
+      <a href="{{nav.href}}" title="{{nav.label}}" style="{{nav.style}}"><div style="font-size:19px;line-height:1">{{nav.icon}}</div></a>
+    </sc-for>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+    <div style="height:56px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid {{theme.borderSubtle}}">
+      <div style="font-size:15px;font-weight:600">Ajustes</div>
+      <button onClick="{{toggleTheme}}" style="display:flex;align-items:center;gap:10px;background:none;border:none;cursor:pointer;padding:4px">
+        <span style="font-size:13px;color:{{theme.textSecondary}}">{{themeLabel}}</span>
+        <span style="width:40px;height:22px;border-radius:11px;background:{{theme.surface2}};border:1px solid {{theme.borderSubtle}};position:relative"><span style="{{thumbStyle}}"></span></span>
+      </button>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding:28px 24px 60px;display:flex;justify-content:center">
+      <div style="width:100%;max-width:680px;display:flex;flex-direction:column;gap:16px">
+
+        <div style="{{sectionStyle}}">
+          <div style="{{sectionTitleStyle}}">Aparência</div>
+          <div style="{{rowStyle}}">
+            <div>
+              <div style="{{rowLabelStyle}}">Tema</div>
+              <div style="{{rowNoteStyle}}">Escuro por padrão — combina com sessões longas de estudo</div>
+            </div>
+            <div style="{{segmentedWrapStyle}}">
+              <div onClick="{{onSetDark}}" style="{{darkTabStyle}}">Escuro</div>
+              <div onClick="{{onSetLight}}" style="{{lightTabStyle}}">Claro</div>
+            </div>
+          </div>
+          <div style="{{rowStyle}}">
+            <div>
+              <div style="{{rowLabelStyle}}">Cor de acento</div>
+              <div style="{{rowNoteStyle}}">Usada em progresso, estado ativo e foco</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <sc-for list="{{accentSwatches}}" as="ac" hint-placeholder-count="4">
+                <div onClick="{{ac.onClick}}" style="{{ac.style}}"></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="{{sectionStyle}}">
+          <div style="{{sectionTitleStyle}}">Sessões e metas</div>
+          <div style="{{rowStyle}}">
+            <div>
+              <div style="{{rowLabelStyle}}">Meta semanal de horas</div>
+              <div style="{{rowNoteStyle}}">Usada nos gráficos do Painel</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input value="{{goalMin}}" onChange="{{onGoalMinChange}}" style="{{smallInputStyle}}"></input>
+              <div style="font-size:13px;color:{{theme.textTertiary}}">a</div>
+              <input value="{{goalMax}}" onChange="{{onGoalMaxChange}}" style="{{smallInputStyle}}"></input>
+              <div style="font-size:13px;color:{{theme.textTertiary}}">h / semana</div>
+            </div>
+          </div>
+          <div style="{{rowStyle}}">
+            <div>
+              <div style="{{rowLabelStyle}}">Lembrete de sessão</div>
+              <div style="{{rowNoteStyle}}">Notificação se nenhuma sessão for iniciada até um horário</div>
+            </div>
+            <div onClick="{{toggleReminder}}" style="{{reminderSwitchStyle}}"><div style="{{reminderThumbStyle}}"></div></div>
+          </div>
+          <sc-if value="{{reminderOn}}" hint-placeholder-val="{{false}}">
+            <div style="{{rowStyle}}">
+              <div style="{{rowLabelStyle}}">Horário do lembrete</div>
+              <input value="{{reminderTime}}" onChange="{{onReminderTimeChange}}" type="time" style="{{smallInputStyle}}"></input>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="{{sectionStyle}}">
+          <div style="{{sectionTitleStyle}}">Fontes de tempo</div>
+          <div style="{{rowNoteStyle}}; margin-bottom:8px">Rotule de onde vêm suas sessões — aparecem no Painel e no registro</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            <sc-for list="{{sourceRows}}" as="sr" hint-placeholder-count="3">
+              <div style="{{sr.rowStyle}}">
+                <input value="{{sr.name}}" onChange="{{sr.onChange}}" style="{{sr.inputStyle}}"></input>
+                <div onClick="{{sr.onToggleRestricted}}" style="{{sr.restrictedPillStyle}}">{{sr.restrictedLabel}}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="{{rowNoteStyle}};margin-top:10px;line-height:1.4">"Restrita" impede que essa fonte conte para fases de tronco principal.</div>
+        </div>
+
+        <div style="{{sectionStyle}}">
+          <div style="{{sectionTitleStyle}}">Dados</div>
+          <div style="{{rowStyle}}">
+            <div>
+              <div style="{{rowLabelStyle}}">Exportar progresso</div>
+              <div style="{{rowNoteStyle}}">Baixa um JSON com fases, tarefas e sessões</div>
+            </div>
+            <button onClick="{{onExport}}" style="{{secondaryBtnStyle}}">Exportar</button>
+          </div>
+          <div style="{{rowStyle}}">
+            <div>
+              <div style="{{rowLabelStyle}}">Reiniciar protótipo</div>
+              <div style="{{rowNoteStyle}}">Restaura os dados de exemplo originais</div>
+            </div>
+            <button onClick="{{onReset}}" style="{{dangerBtnStyle}}">Reiniciar</button>
+          </div>
+          <sc-if value="{{exported}}" hint-placeholder-val="{{false}}">
+            <div style="{{exportedNoteStyle}}">Exportação simulada — nenhum arquivo real é gerado neste protótipo.</div>
+          </sc-if>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    isDark: true, accent: '#4DD8C0',
+    goalMin: '6.5', goalMax: '8', reminderOn: false, reminderTime: '20:00',
+    sources: [
+      { id: 1, name: 'Bloco dedicado', restricted: false },
+      { id: 2, name: 'Estágio', restricted: true },
+      { id: 3, name: 'Faculdade', restricted: true },
+    ],
+    exported: false,
+  };
+
+  darkTheme = { bg: '#0B0F12', surface1: '#12181C', surface2: '#1A2228', borderSubtle: '#263038', borderStrong: '#38454F', textPrimary: '#F2F5F6', textSecondary: '#9BA8B0', textTertiary: '#64727C', accentDeep: '#1E6F63' };
+  lightTheme = { bg: '#F7F9FA', surface1: '#FFFFFF', surface2: '#EEF2F3', borderSubtle: '#E1E7EA', borderStrong: '#C7D0D5', textPrimary: '#12181C', textSecondary: '#4A565E', textTertiary: '#7A868E', accentDeep: '#1E6F63' };
+  accentOptions = ['#4DD8C0', '#5B9BD5', '#D9A441', '#D97757'];
+
+  toggleTheme = () => this.setState(s => ({ isDark: !s.isDark }));
+  onSetDark = () => this.setState({ isDark: true });
+  onSetLight = () => this.setState({ isDark: false });
+  setAccent = (hex) => () => this.setState({ accent: hex });
+  onGoalMinChange = (e) => this.setState({ goalMin: e.target.value });
+  onGoalMaxChange = (e) => this.setState({ goalMax: e.target.value });
+  toggleReminder = () => this.setState(s => ({ reminderOn: !s.reminderOn }));
+  onReminderTimeChange = (e) => this.setState({ reminderTime: e.target.value });
+  onSourceNameChange = (id) => (e) => this.setState(s => ({ sources: s.sources.map(x => x.id === id ? { ...x, name: e.target.value } : x) }));
+  toggleSourceRestricted = (id) => () => this.setState(s => ({ sources: s.sources.map(x => x.id === id ? { ...x, restricted: !x.restricted } : x) }));
+  onExport = () => { this.setState({ exported: true }); clearTimeout(this._expTimer); this._expTimer = setTimeout(() => this.setState({ exported: false }), 2500); };
+  onReset = () => this.setState({ goalMin: '6.5', goalMax: '8', reminderOn: false, accent: '#4DD8C0' });
+
+  renderVals() {
+    const isDark = this.state.isDark;
+    const t = { ...(isDark ? this.darkTheme : this.lightTheme), accent: this.state.accent };
+    const thumbLeft = isDark ? '2px' : '19px';
+
+    const accentSwatches = this.accentOptions.map(hex => ({
+      onClick: this.setAccent(hex),
+      style: `width:28px;height:28px;border-radius:50%;background:${hex};cursor:pointer;border:2px solid ${this.state.accent === hex ? t.textPrimary : 'transparent'}`,
+    }));
+
+    const sourceRows = this.state.sources.map(s => ({
+      name: s.name, onChange: this.onSourceNameChange(s.id),
+      rowStyle: `display:flex;align-items:center;gap:10px`,
+      inputStyle: `flex:1;height:36px;padding:0 12px;border-radius:6px;border:1px solid ${t.borderSubtle};background:${t.surface2};color:${t.textPrimary};font-size:13px`,
+      restrictedLabel: s.restricted ? 'Restrita' : 'Livre',
+      onToggleRestricted: this.toggleSourceRestricted(s.id),
+      restrictedPillStyle: `font-size:11px;font-weight:600;padding:5px 10px;border-radius:999px;cursor:pointer;flex-shrink:0;background:${s.restricted ? 'rgba(77,216,192,0.12)' : t.surface2};color:${s.restricted ? t.accent : t.textTertiary}`,
+    }));
+
+    return {
+      theme: t, themeLabel: isDark ? 'Escuro' : 'Claro', toggleTheme: this.toggleTheme,
+      thumbStyle: `width:16px;height:16px;border-radius:50%;background:${t.accent};position:absolute;top:2px;left:${thumbLeft};transition:left 200ms cubic-bezier(0.32,0.72,0,1)`,
+      navItems: [
+        { icon: '◈', label: 'Mapa', href: 'VETOR - Mapa.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+        { icon: '▤', label: 'Painel', href: 'VETOR - Painel.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+        { icon: '☰', label: 'Tarefas', href: 'VETOR - Tarefas.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+        { icon: '◷', label: 'Sessões', href: 'VETOR - Sessões.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+        { icon: '⚙', label: 'Ajustes', href: 'VETOR - Ajustes.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:${t.surface2};color:${t.accent};cursor:pointer;text-decoration:none` },
+      ],
+      sectionStyle: `border:1px solid ${t.borderSubtle};border-radius:8px;background:${t.surface1};padding:20px`,
+      sectionTitleStyle: `font-size:15px;font-weight:600;margin-bottom:6px`,
+      rowStyle: `display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-top:1px solid ${t.borderSubtle}`,
+      rowLabelStyle: `font-size:13px;color:${t.textPrimary};font-weight:500`,
+      rowNoteStyle: `font-size:12px;color:${t.textTertiary};margin-top:3px`,
+      segmentedWrapStyle: `display:flex;gap:2px;padding:3px;border-radius:8px;background:${t.surface2}`,
+      darkTabStyle: `padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:${isDark ? t.surface1 : 'transparent'};color:${isDark ? t.accent : t.textSecondary}`,
+      lightTabStyle: `padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:${!isDark ? t.surface1 : 'transparent'};color:${!isDark ? t.accent : t.textSecondary}`,
+      onSetDark: this.onSetDark, onSetLight: this.onSetLight,
+      accentSwatches,
+      goalMin: this.state.goalMin, onGoalMinChange: this.onGoalMinChange,
+      goalMax: this.state.goalMax, onGoalMaxChange: this.onGoalMaxChange,
+      smallInputStyle: `width:60px;height:34px;padding:0 8px;border-radius:6px;border:1px solid ${t.borderSubtle};background:${t.surface2};color:${t.textPrimary};font-size:13px;font-family:'JetBrains Mono',monospace`,
+      reminderOn: this.state.reminderOn, toggleReminder: this.toggleReminder,
+      reminderSwitchStyle: `width:40px;height:22px;border-radius:11px;background:${this.state.reminderOn ? t.accent : t.surface2};border:1px solid ${t.borderSubtle};position:relative;cursor:pointer;transition:background 200ms ease`,
+      reminderThumbStyle: `width:16px;height:16px;border-radius:50%;background:${this.state.reminderOn ? '#06231F' : t.textTertiary};position:absolute;top:2px;left:${this.state.reminderOn ? '20px' : '2px'};transition:left 200ms cubic-bezier(0.32,0.72,0,1)`,
+      reminderTime: this.state.reminderTime, onReminderTimeChange: this.onReminderTimeChange,
+      sourceRows,
+      secondaryBtnStyle: `height:36px;padding:0 16px;border-radius:6px;border:1px solid ${t.borderStrong};background:none;color:${t.textPrimary};font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0`,
+      dangerBtnStyle: `height:36px;padding:0 16px;border-radius:6px;border:1px solid ${t.borderSubtle};background:none;color:#D97757;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0`,
+      onExport: this.onExport, onReset: this.onReset, exported: this.state.exported,
+      exportedNoteStyle: `font-size:12px;color:${t.textTertiary};margin-top:14px;padding-top:14px;border-top:1px solid ${t.borderSubtle}`,
+    };
+  }
+}
+</script>
+</body>
+</html>

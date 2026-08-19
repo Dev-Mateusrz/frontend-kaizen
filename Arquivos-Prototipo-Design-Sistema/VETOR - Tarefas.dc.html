@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>body{margin:0}*{box-sizing:border-box}</style>
+</helmet>
+<div data-screen-label="Tarefas" style="height:100vh;width:100vw;overflow:hidden;display:flex;background:{{theme.bg}};color:{{theme.textPrimary}};font-family:'Inter',sans-serif">
+
+  <div style="width:72px;flex-shrink:0;background:{{theme.surface1}};border-right:1px solid {{theme.borderSubtle}};display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:6px">
+    <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;color:{{theme.accent}};margin-bottom:18px">V</div>
+    <sc-for list="{{navItems}}" as="nav" hint-placeholder-count="5">
+      <a href="{{nav.href}}" title="{{nav.label}}" style="{{nav.style}}"><div style="font-size:19px;line-height:1">{{nav.icon}}</div></a>
+    </sc-for>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+    <div style="height:56px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid {{theme.borderSubtle}}">
+      <div style="display:flex;align-items:baseline;gap:14px">
+        <div style="font-size:15px;font-weight:600">Tarefas</div>
+        <div style="font-size:13px;color:{{theme.textTertiary}}">{{taskCountText}}</div>
+      </div>
+      <button onClick="{{toggleTheme}}" style="display:flex;align-items:center;gap:10px;background:none;border:none;cursor:pointer;padding:4px">
+        <span style="font-size:13px;color:{{theme.textSecondary}}">{{themeLabel}}</span>
+        <span style="width:40px;height:22px;border-radius:11px;background:{{theme.surface2}};border:1px solid {{theme.borderSubtle}};position:relative"><span style="{{thumbStyle}}"></span></span>
+      </button>
+    </div>
+
+    <div style="padding:20px 24px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div style="{{segmentedWrapStyle}}">
+        <sc-for list="{{viewTabs}}" as="vt" hint-placeholder-count="3">
+          <div onClick="{{vt.onClick}}" style="{{vt.style}}">{{vt.label}}</div>
+        </sc-for>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <select value="{{filterPhase}}" onChange="{{onFilterPhaseChange}}" style="{{selectStyle}}">
+          <option value="todas">Todas as fases</option>
+          <sc-for list="{{phaseOptions}}" as="ph" hint-placeholder-count="11">
+            <option value="{{ph.id}}">{{ph.name}}</option>
+          </sc-for>
+        </select>
+        <div style="{{segmentedWrapStyle}}">
+          <sc-for list="{{statusTabs}}" as="st" hint-placeholder-count="4">
+            <div onClick="{{st.onClick}}" style="{{st.style}}">{{st.label}}</div>
+          </sc-for>
+        </div>
+        <sc-if value="{{showGrouping}}" hint-placeholder-val="{{true}}">
+          <select value="{{grouping}}" onChange="{{onGroupingChange}}" style="{{selectStyle}}">
+            <option value="nenhum">Sem agrupamento</option>
+            <option value="fase">Agrupar por fase</option>
+            <option value="prazo">Agrupar por prazo</option>
+            <option value="prioridade">Agrupar por prioridade</option>
+          </select>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding:16px 24px 60px">
+
+      <sc-if value="{{isListaView}}" hint-placeholder-val="{{true}}">
+        <div>
+          <div style="{{createBoxStyle}}">
+            <input value="{{draftText}}" onChange="{{onDraftChange}}" onKeyDown="{{onDraftKeyDown}}" placeholder="Nova tarefa… use #fase, !p1, ~45m, @amanhã" style="{{createInputStyle}}"></input>
+            <div style="{{hintRowStyle}}">
+              <sc-for list="{{draftHints}}" as="h" hint-placeholder-count="4">
+                <div style="{{h.style}}">{{h.text}}</div>
+              </sc-for>
+            </div>
+          </div>
+
+          <sc-for list="{{groupsView}}" as="grp" hint-placeholder-count="1">
+            <div style="margin-top:22px">
+              <sc-if value="{{grp.showHeader}}" hint-placeholder-val="{{false}}">
+                <div style="{{groupHeaderStyle}}">{{grp.title}}</div>
+              </sc-if>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{grp.tasks}}" as="task" hint-placeholder-count="4">
+                  <div draggable="{{task.draggable}}" onDragStart="{{task.onDragStart}}" onDragOver="{{task.onDragOver}}" onDrop="{{task.onDrop}}" onDragEnd="{{task.onDragEnd}}" style="{{task.rowStyle}}">
+                    <div onClick="{{task.onToggle}}" style="{{task.checkboxStyle}}">
+                      <sc-if value="{{task.done}}" hint-placeholder-val="{{false}}"><span style="font-size:11px;color:#06231F;font-weight:700">✓</span></sc-if>
+                    </div>
+                    <div onClick="{{task.onOpenDetail}}" style="flex:1;min-width:0;cursor:pointer">
+                      <div style="{{task.titleStyle}}">{{task.title}}</div>
+                      <div style="display:flex;align-items:center;gap:10px;margin-top:5px;flex-wrap:wrap">
+                        <sc-if value="{{task.hasPhase}}" hint-placeholder-val="{{false}}">
+                          <div style="{{task.phaseChipStyle}}"><span style="{{task.phaseDotStyle}}"></span>{{task.phaseName}}</div>
+                        </sc-if>
+                        <sc-if value="{{task.hasDue}}" hint-placeholder-val="{{false}}">
+                          <div style="{{task.dueStyle}}">{{task.dueLabel}}</div>
+                        </sc-if>
+                        <sc-if value="{{task.hasSubtasks}}" hint-placeholder-val="{{false}}">
+                          <div style="{{task.subtaskStyle}}">{{task.subtaskText}}</div>
+                        </sc-if>
+                      </div>
+                    </div>
+                    <sc-if value="{{task.hasPriority}}" hint-placeholder-val="{{false}}">
+                      <div style="{{task.priorityStyle}}">{{task.priority}}</div>
+                    </sc-if>
+                    <sc-if value="{{task.hasEstimate}}" hint-placeholder-val="{{false}}">
+                      <div style="{{task.estimateStyle}}">{{task.estimateText}}</div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isKanbanView}}" hint-placeholder-val="{{false}}">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+          <sc-for list="{{kanbanColumns}}" as="col" hint-placeholder-count="3">
+            <div onDragOver="{{col.onDragOver}}" onDrop="{{col.onDrop}}" style="{{col.wrapStyle}}">
+              <div style="{{col.headerStyle}}">{{col.title}} <span style="{{col.countStyle}}">{{col.count}}</span></div>
+              <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+                <sc-for list="{{col.tasks}}" as="task" hint-placeholder-count="3">
+                  <div draggable="true" onDragStart="{{task.onDragStart}}" style="{{task.cardStyle}}">
+                    <div style="{{task.titleStyle}}">{{task.title}}</div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
+                      <sc-if value="{{task.hasPhase}}" hint-placeholder-val="{{false}}">
+                        <div style="{{task.phaseChipStyle}}"><span style="{{task.phaseDotStyle}}"></span>{{task.phaseName}}</div>
+                      </sc-if>
+                      <sc-if value="{{task.hasPriority}}" hint-placeholder-val="{{false}}">
+                        <div style="{{task.priorityStyle}}">{{task.priority}}</div>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isCalendarView}}" hint-placeholder-val="{{false}}">
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <button onClick="{{calendar.onPrev}}" style="{{calendar.navBtnStyle}}">‹</button>
+              <div style="{{calendar.titleStyle}}">{{calendar.title}}</div>
+              <button onClick="{{calendar.onNext}}" style="{{calendar.navBtnStyle}}">›</button>
+              <button onClick="{{calendar.onToday}}" style="{{calendar.todayBtnStyle}}">Hoje</button>
+            </div>
+            <div style="{{segmentedWrapStyle}}">
+              <div onClick="{{calendar.onSetMonth}}" style="{{calendar.monthTabStyle}}">Mês</div>
+              <div onClick="{{calendar.onSetWeek}}" style="{{calendar.weekTabStyle}}">Semana</div>
+            </div>
+          </div>
+
+          <sc-if value="{{calendar.isMonth}}" hint-placeholder-val="{{true}}">
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">
+              <sc-for list="{{calendar.weekdayLabels}}" as="wd" hint-placeholder-count="7">
+                <div style="{{calendar.weekdayLabelStyle}}">{{wd}}</div>
+              </sc-for>
+              <sc-for list="{{calendar.monthDays}}" as="day" hint-placeholder-count="42">
+                <div style="{{day.wrapStyle}}">
+                  <div style="{{day.headerStyle}}">{{day.dayNum}}</div>
+                  <div style="display:flex;flex-direction:column;gap:4px;margin-top:6px">
+                    <sc-for list="{{day.tasks}}" as="task" hint-placeholder-count="1">
+                      <div onClick="{{task.onClick}}" onMouseEnter="{{task.onMouseEnter}}" onMouseLeave="{{task.onMouseLeave}}" style="{{task.cardStyle}}">
+                        <div style="{{task.titleStyle}}">{{task.title}}</div>
+                        <div style="{{task.statusPillStyle}}">{{task.statusLabel}}</div>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{day.hasMore}}" hint-placeholder-val="{{false}}">
+                      <div style="{{day.moreStyle}}">{{day.moreText}}</div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{calendar.isWeek}}" hint-placeholder-val="{{false}}">
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:12px">
+              <sc-for list="{{calendar.weekDays}}" as="day" hint-placeholder-count="7">
+                <div style="{{day.wrapStyle}}">
+                  <div style="{{day.headerStyle}}">{{day.label}}</div>
+                  <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">
+                    <sc-for list="{{day.tasks}}" as="task" hint-placeholder-count="2">
+                      <div onClick="{{task.onClick}}" onMouseEnter="{{task.onMouseEnter}}" onMouseLeave="{{task.onMouseLeave}}" style="{{task.cardStyle}}">
+                        <div style="{{task.titleStyle}}">{{task.title}}</div>
+                        <div style="{{task.phaseChipStyle}}"><span style="{{task.phaseDotStyle}}"></span>{{task.phaseName}}</div>
+                        <div style="{{task.statusPillStyle}}">{{task.statusLabel}}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{calendar.hoverTask}}" hint-placeholder-val="{{false}}">
+            <div style="{{calendar.hoverStyle}}">
+              <div style="{{calendar.hoverTask.boxStyle}}">
+                <div style="{{calendar.hoverTask.titleStyle}}">{{calendar.hoverTask.title}}</div>
+                <div style="{{calendar.hoverTask.statusPillStyle}}">{{calendar.hoverTask.statusLabel}}</div>
+                <sc-if value="{{calendar.hoverTask.hasPhase}}" hint-placeholder-val="{{false}}">
+                  <div style="{{calendar.hoverTask.metaRowStyle}}"><span style="{{calendar.hoverTask.phaseDotStyle}}"></span>{{calendar.hoverTask.phaseName}}</div>
+                </sc-if>
+                <sc-if value="{{calendar.hoverTask.hasDue}}" hint-placeholder-val="{{false}}">
+                  <div style="{{calendar.hoverTask.metaTextStyle}}">Prazo: {{calendar.hoverTask.dueLabelText}}</div>
+                </sc-if>
+                <sc-if value="{{calendar.hoverTask.hasPriority}}" hint-placeholder-val="{{false}}">
+                  <div style="{{calendar.hoverTask.metaTextStyle}}">Prioridade {{calendar.hoverTask.priority}}</div>
+                </sc-if>
+                <sc-if value="{{calendar.hoverTask.hasEstimate}}" hint-placeholder-val="{{false}}">
+                  <div style="{{calendar.hoverTask.metaTextStyle}}">Estimativa: {{calendar.hoverTask.estimateText}}</div>
+                </sc-if>
+                <sc-if value="{{calendar.hoverTask.hasSubtasks}}" hint-placeholder-val="{{false}}">
+                  <div style="{{calendar.hoverTask.metaTextStyle}}">{{calendar.hoverTask.subtaskText}}</div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <sc-if value="{{taskPanel}}" hint-placeholder-val="{{false}}">
+    <div onClick="{{taskPanel.onClose}}" style="{{taskPanel.backdropStyle}}">
+      <div onClick="{{stopProp}}" style="{{taskPanel.panelStyle}}">
+        <div style="{{taskPanel.headerStyle}}">
+          <div style="{{taskPanel.headerLabelStyle}}">Detalhe da tarefa</div>
+          <button onClick="{{taskPanel.onClose}}" style="{{taskPanel.closeBtnStyle}}">×</button>
+        </div>
+        <div style="{{taskPanel.bodyStyle}}">
+          <div>
+            <div style="{{taskPanel.fieldLabelStyle}}">TÍTULO</div>
+            <input value="{{taskPanel.title}}" onChange="{{taskPanel.onTitleChange}}" style="{{taskPanel.inputStyle}}"></input>
+          </div>
+          <div>
+            <div style="{{taskPanel.fieldLabelStyle}}">FASE</div>
+            <select value="{{taskPanel.phaseId}}" onChange="{{taskPanel.onPhaseChange}}" style="{{taskPanel.inputStyle}}">
+              <option value="">Sem fase</option>
+              <sc-for list="{{phaseOptions}}" as="ph" hint-placeholder-count="11"><option value="{{ph.id}}">{{ph.name}}</option></sc-for>
+            </select>
+          </div>
+          <div style="display:flex;gap:12px">
+            <div style="flex:1">
+              <div style="{{taskPanel.fieldLabelStyle}}">PRAZO</div>
+              <input value="{{taskPanel.due}}" onChange="{{taskPanel.onDueChange}}" type="date" style="{{taskPanel.inputStyle}}"></input>
+            </div>
+            <div style="flex:1">
+              <div style="{{taskPanel.fieldLabelStyle}}">ESTIMATIVA (MIN)</div>
+              <input value="{{taskPanel.estimateMin}}" onChange="{{taskPanel.onEstimateChange}}" style="{{taskPanel.inputStyle}}"></input>
+            </div>
+          </div>
+          <div>
+            <div style="{{taskPanel.fieldLabelStyle}}">PRIORIDADE</div>
+            <div style="{{taskPanel.segmentedWrapStyle}}">
+              <sc-for list="{{taskPanel.priorityOptions}}" as="po" hint-placeholder-count="3">
+                <div onClick="{{po.onClick}}" style="{{po.style}}">{{po.label}}</div>
+              </sc-for>
+            </div>
+          </div>
+          <div>
+            <div style="{{taskPanel.fieldLabelStyle}}">SUBTAREFAS</div>
+            <input value="{{taskPanel.draftSubtask}}" onChange="{{taskPanel.onDraftSubtaskChange}}" onKeyDown="{{taskPanel.onDraftSubtaskKeyDown}}" placeholder="Adicionar subtarefa e pressionar Enter…" style="{{taskPanel.subtaskInputStyle}}"></input>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">
+              <sc-for list="{{taskPanel.subtasks}}" as="st" hint-placeholder-count="2">
+                <div style="{{st.rowStyle}}">
+                  <div onClick="{{st.onToggle}}" style="{{st.checkboxStyle}}">
+                    <sc-if value="{{st.done}}" hint-placeholder-val="{{false}}"><span style="font-size:10px;color:#06231F;font-weight:700">✓</span></sc-if>
+                  </div>
+                  <div style="{{st.titleStyle}}">{{st.title}}</div>
+                  <div onClick="{{st.onRemove}}" style="{{st.removeStyle}}">×</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="{{taskPanel.footerStyle}}">
+          <button onClick="{{taskPanel.onToggleStatus}}" style="{{taskPanel.statusBtnStyle}}">{{taskPanel.statusToggleLabel}}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const STATUS_COLORS = { 'Bloqueada': '#64727C', 'Disponível': '#5B9BD5', 'Em andamento': '#4DD8C0', 'Aguardando validação': '#D9A441', 'Concluída': '#5FB87A', 'Pausada': '#8A7CA8', 'Em revisão': '#D97757' };
+const PHASES = [
+  { id: 'n0', name: 'Fase 0 — Começar do zero', color: STATUS_COLORS['Concluída'] },
+  { id: 'n1a', name: 'Fase 1A — OO em Python', color: STATUS_COLORS['Concluída'] },
+  { id: 'math', name: 'Trilha paralela — Matemática', color: STATUS_COLORS['Em andamento'] },
+  { id: 'n2', name: 'Fase 2 — Git e rotina profissional', color: STATUS_COLORS['Em andamento'] },
+  { id: 'n1b', name: 'Fase 1B — OO em C#', color: STATUS_COLORS['Disponível'] },
+  { id: 'n3', name: 'Fase 3 — Engenharia de Software', color: STATUS_COLORS['Disponível'] },
+  { id: 'n4', name: 'Fase 4 — Unity e mundo 3D', color: STATUS_COLORS['Bloqueada'] },
+  { id: 'n5', name: 'Fase 5 — XR', color: STATUS_COLORS['Bloqueada'] },
+  { id: 'n6', name: 'Fase 6 — AR e ambiente físico', color: STATUS_COLORS['Bloqueada'] },
+  { id: 'n7', name: 'Fase 7 — Eng. de Computação Espacial', color: STATUS_COLORS['Bloqueada'] },
+  { id: 'n8', name: 'Fase 8 — Especialização', color: STATUS_COLORS['Bloqueada'] },
+];
+const PHASE_KEYWORDS = { zero: 'n0', python: 'n1a', math: 'math', matematica: 'math', git: 'n2', csharp: 'n1b', 'c#': 'n1b', software: 'n3', unity: 'n4', xr: 'n5', ar: 'n6', espacial: 'n7', especializacao: 'n8' };
+const TODAY = new Date(2026, 7, 13);
+
+function normalize(s) { return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+function fmtDate(d) { return d.toISOString().slice(0, 10); }
+function addDays(base, n) { const d = new Date(base); d.setDate(d.getDate() + n); return d; }
+
+class Component extends DCLogic {
+  state = {
+    isDark: true, view: 'lista', grouping: 'nenhum', filterPhase: 'todas', filterStatus: 'todas', draftText: '',
+    dragId: null, calendarMode: 'mes', calendarAnchor: fmtDate(TODAY), hoverTaskId: null, hoverStyle: '',
+    selectedTaskId: null, taskPanelDraftSubtask: '',
+    tasks: [
+      { id: 1, title: 'Documentar decisões de arquitetura', phaseId: 'n2', due: fmtDate(TODAY), priority: 'P2', estimateMin: 30, status: 'doing', order: 0, subtasks: [] },
+      { id: 2, title: 'Organizar pastas do repositório principal', phaseId: 'n2', due: null, priority: 'P3', estimateMin: 15, status: 'todo', order: 1, subtasks: [] },
+      { id: 3, title: 'Resolver exercícios de produto vetorial', phaseId: 'math', due: fmtDate(addDays(TODAY, 1)), priority: 'P1', estimateMin: 45, status: 'todo', order: 2,
+        subtasks: [{ id: 31, title: 'Revisar teoria', done: true }, { id: 32, title: 'Fazer 10 exercícios', done: false }] },
+      { id: 4, title: 'Assistir aula sobre normalização de vetores', phaseId: 'math', due: null, priority: 'P2', estimateMin: 20, status: 'todo', order: 3, subtasks: [] },
+      { id: 5, title: 'Configurar Visual Studio para C#', phaseId: 'n1b', due: null, priority: 'P3', estimateMin: 25, status: 'todo', order: 4, subtasks: [] },
+      { id: 6, title: 'Revisar sintaxe Python vs. C#', phaseId: 'n1b', due: fmtDate(addDays(TODAY, 3)), priority: 'P2', estimateMin: 40, status: 'todo', order: 5, subtasks: [] },
+      { id: 7, title: 'Esboçar módulos do projeto de conclusão', phaseId: 'n3', due: null, priority: 'P1', estimateMin: 60, status: 'todo', order: 6, subtasks: [] },
+      { id: 8, title: 'Criar README inicial', phaseId: 'n2', due: null, priority: 'P3', estimateMin: 10, status: 'done', order: 7, doneAt: fmtDate(addDays(TODAY, -1)), subtasks: [] },
+    ],
+  };
+
+  darkTheme = { bg: '#0B0F12', surface1: '#12181C', surface2: '#1A2228', borderSubtle: '#263038', borderStrong: '#38454F', textPrimary: '#F2F5F6', textSecondary: '#9BA8B0', textTertiary: '#64727C', accent: '#4DD8C0', accentDeep: '#1E6F63' };
+  lightTheme = { bg: '#F7F9FA', surface1: '#FFFFFF', surface2: '#EEF2F3', borderSubtle: '#E1E7EA', borderStrong: '#C7D0D5', textPrimary: '#12181C', textSecondary: '#4A565E', textTertiary: '#7A868E', accent: '#4DD8C0', accentDeep: '#1E6F63' };
+
+  toggleTheme = () => this.setState(s => ({ isDark: !s.isDark }));
+  setView = (v) => () => this.setState({ view: v });
+  setFilterStatus = (v) => () => this.setState({ filterStatus: v });
+  onFilterPhaseChange = (e) => this.setState({ filterPhase: e.target.value });
+  onGroupingChange = (e) => this.setState({ grouping: e.target.value });
+  onDraftChange = (e) => this.setState({ draftText: e.target.value });
+  setCalendarMode = (mode) => () => this.setState({ calendarMode: mode });
+  calendarToday = () => this.setState({ calendarAnchor: fmtDate(TODAY) });
+  calendarPrev = () => this.setState(s => {
+    const d = new Date(s.calendarAnchor);
+    if (s.calendarMode === 'mes') return { calendarAnchor: fmtDate(new Date(d.getFullYear(), d.getMonth() - 1, 1)) };
+    return { calendarAnchor: fmtDate(addDays(d, -7)) };
+  });
+  calendarNext = () => this.setState(s => {
+    const d = new Date(s.calendarAnchor);
+    if (s.calendarMode === 'mes') return { calendarAnchor: fmtDate(new Date(d.getFullYear(), d.getMonth() + 1, 1)) };
+    return { calendarAnchor: fmtDate(addDays(d, 7)) };
+  });
+  onCardHover = (taskId) => (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const width = 260;
+    let left = r.left;
+    if (left + width > window.innerWidth - 12) left = window.innerWidth - width - 12;
+    if (left < 12) left = 12;
+    let top = r.bottom + 8;
+    if (top + 160 > window.innerHeight - 12) top = r.top - 168;
+    this.setState({ hoverTaskId: taskId, hoverStyle: `position:fixed;left:${left}px;top:${top}px;width:${width}px;z-index:200;pointer-events:none` });
+  };
+  onCardLeave = () => this.setState({ hoverTaskId: null });
+
+  stopProp = (e) => e.stopPropagation();
+  openTaskDetail = (id) => () => this.setState({ selectedTaskId: id, taskPanelDraftSubtask: '' });
+  closeTaskDetail = () => this.setState({ selectedTaskId: null });
+  updateTask = (id, patch) => this.setState(s => ({ tasks: s.tasks.map(t => t.id === id ? { ...t, ...patch } : t) }));
+  onDraftSubtaskChange = (e) => this.setState({ taskPanelDraftSubtask: e.target.value });
+  onDraftSubtaskKeyDown = (e) => {
+    if (e.key !== 'Enter') return;
+    const title = this.state.taskPanelDraftSubtask.trim();
+    if (!title) return;
+    const id = this.state.selectedTaskId;
+    this.setState(s => ({
+      taskPanelDraftSubtask: '',
+      tasks: s.tasks.map(t => t.id !== id ? t : { ...t, subtasks: [...t.subtasks, { id: Date.now(), title, done: false }] }),
+    }));
+  };
+  toggleSubtask = (taskId, subId) => () => this.setState(s => ({
+    tasks: s.tasks.map(t => t.id !== taskId ? t : { ...t, subtasks: t.subtasks.map(st => st.id === subId ? { ...st, done: !st.done } : st) }),
+  }));
+  removeSubtask = (taskId, subId) => () => this.setState(s => ({
+    tasks: s.tasks.map(t => t.id !== taskId ? t : { ...t, subtasks: t.subtasks.filter(st => st.id !== subId) }),
+  }));
+
+  parseDraft(text) {
+    let title = text;
+    let phaseId = null, priority = null, estimateMin = null, due = null;
+    const phaseMatch = text.match(/#(\S+)/);
+    if (phaseMatch) { const key = normalize(phaseMatch[1]); phaseId = PHASE_KEYWORDS[key] || null; title = title.replace(phaseMatch[0], ''); }
+    const prioMatch = text.match(/!(p[1-3])/i);
+    if (prioMatch) { priority = prioMatch[1].toUpperCase(); title = title.replace(prioMatch[0], ''); }
+    const estMatch = text.match(/~(\d+)(h|m)?/i);
+    if (estMatch) { const n = parseInt(estMatch[1], 10); estimateMin = estMatch[2] && estMatch[2].toLowerCase() === 'h' ? n * 60 : n; title = title.replace(estMatch[0], ''); }
+    const dueMatch = text.match(/@(\S+)/);
+    if (dueMatch) {
+      const key = normalize(dueMatch[1]);
+      if (key === 'hoje') due = fmtDate(TODAY);
+      else if (key === 'amanha') due = fmtDate(addDays(TODAY, 1));
+      title = title.replace(dueMatch[0], '');
+    }
+    return { title: title.replace(/\s+/g, ' ').trim(), phaseId, priority, estimateMin, due };
+  }
+
+  onDraftKeyDown = (e) => {
+    if (e.key !== 'Enter') return;
+    const text = this.state.draftText.trim();
+    if (!text) return;
+    const parsed = this.parseDraft(text);
+    if (!parsed.title) return;
+    this.setState(s => ({
+      draftText: '',
+      tasks: [...s.tasks, { id: Date.now(), title: parsed.title, phaseId: parsed.phaseId, due: parsed.due, priority: parsed.priority, estimateMin: parsed.estimateMin, status: 'todo', order: s.tasks.length, subtasks: [] }],
+    }));
+  };
+
+  toggleTask = (id) => () => this.setState(s => ({
+    tasks: s.tasks.map(t => t.id !== id ? t : { ...t, status: t.status === 'done' ? 'todo' : 'done', doneAt: t.status === 'done' ? null : fmtDate(TODAY) }),
+  }));
+
+  setTaskStatus = (id, status) => this.setState(s => ({ tasks: s.tasks.map(t => t.id === id ? { ...t, status, doneAt: status === 'done' ? fmtDate(TODAY) : null } : t) }));
+
+  reorderTask(draggedId, targetId) {
+    if (draggedId === targetId) return;
+    this.setState(s => {
+      const tasks = [...s.tasks];
+      const from = tasks.findIndex(t => t.id === draggedId);
+      const to = tasks.findIndex(t => t.id === targetId);
+      if (from < 0 || to < 0) return null;
+      const [item] = tasks.splice(from, 1);
+      tasks.splice(to, 0, item);
+      return { tasks: tasks.map((t, i) => ({ ...t, order: i })) };
+    });
+  }
+
+  dueLabel(due, status) {
+    if (!due) return null;
+    if (due === fmtDate(TODAY)) return { label: 'Hoje', overdue: false };
+    if (due === fmtDate(addDays(TODAY, 1))) return { label: 'Amanhã', overdue: false };
+    const d = new Date(due);
+    const overdue = d < TODAY && status !== 'done';
+    return { label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), overdue };
+  }
+
+  buildTaskView(t, theme, draggable) {
+    const phase = PHASES.find(p => p.id === t.phaseId);
+    const due = this.dueLabel(t.due, t.status);
+    const doneSub = t.subtasks.filter(s => s.done).length;
+    return {
+      id: t.id, title: t.title, done: t.status === 'done', draggable,
+      rowStyle: `display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid ${theme.borderSubtle};border-radius:7px;background:${theme.surface1};transform:translateY(${t.status === 'done' ? '1px' : '0'});transition:transform 200ms cubic-bezier(0.32,0.72,0,1),opacity 200ms ease;opacity:${t.status === 'done' ? 0.6 : 1};cursor:${draggable ? 'grab' : 'default'}`,
+      checkboxStyle: `width:18px;height:18px;border-radius:4px;border:1px solid ${t.status === 'done' ? theme.accent : theme.borderStrong};background:${t.status === 'done' ? theme.accent : theme.surface1};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0`,
+      onToggle: this.toggleTask(t.id), onOpenDetail: this.openTaskDetail(t.id),
+      titleStyle: `font-size:14px;color:${t.status === 'done' ? theme.textTertiary : theme.textPrimary};text-decoration:${t.status === 'done' ? 'line-through' : 'none'}`,
+      hasPhase: !!phase, phaseName: phase ? phase.name.replace(/^(Fase \S+ — |Trilha paralela — )/, '') : '',
+      phaseChipStyle: `display:flex;align-items:center;gap:6px;font-size:11px;color:${theme.textSecondary};background:${theme.surface2};padding:3px 8px;border-radius:999px`,
+      phaseDotStyle: `width:6px;height:6px;border-radius:50%;background:${phase ? phase.color : theme.textTertiary};flex-shrink:0`,
+      hasDue: !!due, dueLabel: due ? due.label : '', dueStyle: `font-family:'JetBrains Mono',monospace;font-size:11px;color:${due && due.overdue ? '#D97757' : theme.textTertiary}`,
+      hasSubtasks: t.subtasks.length > 0, subtaskText: `${doneSub}/${t.subtasks.length} subtarefas`, subtaskStyle: `font-family:'JetBrains Mono',monospace;font-size:11px;color:${theme.textTertiary}`,
+      hasPriority: !!t.priority, priority: t.priority, priorityStyle: `font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:${theme.textSecondary};background:${theme.surface2};padding:3px 7px;border-radius:4px;flex-shrink:0`,
+      hasEstimate: !!t.estimateMin, estimateText: `${t.estimateMin}m`, estimateStyle: `font-family:'JetBrains Mono',monospace;font-size:11px;color:${theme.textTertiary};flex-shrink:0;width:34px;text-align:right`,
+      onDragStart: () => this.setState({ dragId: t.id }),
+      onDragOver: (e) => e.preventDefault(),
+      onDrop: (e) => { e.preventDefault(); if (this.state.dragId != null) this.reorderTask(this.state.dragId, t.id); },
+      onDragEnd: () => this.setState({ dragId: null }),
+    };
+  }
+
+  filteredTasks() {
+    const { tasks, filterPhase, filterStatus } = this.state;
+    return tasks.filter(t => (filterPhase === 'todas' || t.phaseId === filterPhase) && (filterStatus === 'todas' || t.status === filterStatus));
+  }
+
+  renderVals() {
+    const isDark = this.state.isDark;
+    const t = isDark ? this.darkTheme : this.lightTheme;
+    const thumbLeft = isDark ? '2px' : '19px';
+    const activeTabStyle = (active) => `padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;background:${active ? t.surface2 : 'transparent'};color:${active ? t.accent : t.textSecondary}`;
+
+    const filtered = this.filteredTasks();
+    const grouping = this.state.grouping;
+    const sortTasks = (arr) => [...arr].sort((a, b) => (a.status === 'done') - (b.status === 'done') || a.order - b.order);
+
+    let groupsView;
+    if (grouping === 'nenhum') {
+      groupsView = [{ showHeader: false, title: '', tasks: sortTasks(filtered).map(x => this.buildTaskView(x, t, true)) }];
+    } else if (grouping === 'fase') {
+      groupsView = PHASES.map(p => ({ showHeader: true, title: p.name, tasks: sortTasks(filtered.filter(x => x.phaseId === p.id)).map(x => this.buildTaskView(x, t, false)) }))
+        .concat([{ showHeader: true, title: 'Sem fase', tasks: sortTasks(filtered.filter(x => !x.phaseId)).map(x => this.buildTaskView(x, t, false)) }])
+        .filter(g => g.tasks.length > 0);
+    } else if (grouping === 'prioridade') {
+      groupsView = ['P1', 'P2', 'P3', null].map(p => ({ showHeader: true, title: p ? `Prioridade ${p}` : 'Sem prioridade', tasks: sortTasks(filtered.filter(x => x.priority === p)).map(x => this.buildTaskView(x, t, false)) }))
+        .filter(g => g.tasks.length > 0);
+    } else {
+      const overdue = filtered.filter(x => x.due && new Date(x.due) < TODAY && x.status !== 'done');
+      const today = filtered.filter(x => x.due === fmtDate(TODAY));
+      const upcoming = filtered.filter(x => x.due && new Date(x.due) > TODAY);
+      const none = filtered.filter(x => !x.due);
+      groupsView = [
+        { showHeader: true, title: 'Atrasadas', tasks: sortTasks(overdue).map(x => this.buildTaskView(x, t, false)) },
+        { showHeader: true, title: 'Hoje', tasks: sortTasks(today).map(x => this.buildTaskView(x, t, false)) },
+        { showHeader: true, title: 'Próximas', tasks: sortTasks(upcoming).map(x => this.buildTaskView(x, t, false)) },
+        { showHeader: true, title: 'Sem prazo', tasks: sortTasks(none).map(x => this.buildTaskView(x, t, false)) },
+      ].filter(g => g.tasks.length > 0);
+    }
+
+    const kanbanColumns = [
+      { key: 'todo', title: 'A fazer' }, { key: 'doing', title: 'Em andamento' }, { key: 'done', title: 'Concluído' },
+    ].map(col => {
+      const colTasks = filtered.filter(x => x.status === col.key);
+      return {
+        title: col.title, count: colTasks.length,
+        wrapStyle: `background:${t.surface1};border:1px solid ${t.borderSubtle};border-radius:8px;padding:14px;min-height:200px`,
+        headerStyle: `font-size:13px;font-weight:600;color:${t.textSecondary}`,
+        countStyle: `font-family:'JetBrains Mono',monospace;font-size:11px;color:${t.textTertiary};margin-left:6px`,
+        onDragOver: (e) => e.preventDefault(),
+        onDrop: (e) => { e.preventDefault(); if (this.state.dragId != null) this.setTaskStatus(this.state.dragId, col.key); },
+        tasks: colTasks.map(x => {
+          const phase = PHASES.find(p => p.id === x.phaseId);
+          return {
+            title: x.title, hasPhase: !!phase, phaseName: phase ? phase.name.replace(/^(Fase \S+ — |Trilha paralela — )/, '') : '',
+            phaseChipStyle: `display:flex;align-items:center;gap:6px;font-size:10px;color:${t.textSecondary};background:${t.surface2};padding:3px 7px;border-radius:999px`,
+            phaseDotStyle: `width:5px;height:5px;border-radius:50%;background:${phase ? phase.color : t.textTertiary}`,
+            hasPriority: !!x.priority, priority: x.priority, priorityStyle: `font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:${t.textSecondary}`,
+            cardStyle: `background:${t.surface2};border:1px solid ${t.borderSubtle};border-radius:6px;padding:10px;cursor:grab`,
+            titleStyle: `font-size:13px;color:${t.textPrimary}`,
+            onDragStart: () => this.setState({ dragId: x.id }),
+          };
+        }),
+      };
+    });
+
+    const calendar = this.buildCalendarView(t, filtered, activeTabStyle);
+
+    const draft = this.state.draftText;
+    const parsed = draft ? this.parseDraft(draft) : null;
+    const draftHints = draft ? [
+      parsed.phaseId ? { text: `#${PHASES.find(p => p.id === parsed.phaseId).name.split(' — ')[0]}`, style: `font-size:11px;color:${t.accent};background:rgba(77,216,192,0.12);padding:3px 8px;border-radius:999px` } : null,
+      parsed.priority ? { text: parsed.priority, style: `font-size:11px;color:${t.textSecondary};background:${t.surface2};padding:3px 8px;border-radius:999px` } : null,
+      parsed.estimateMin ? { text: `${parsed.estimateMin}m`, style: `font-family:'JetBrains Mono',monospace;font-size:11px;color:${t.textSecondary};background:${t.surface2};padding:3px 8px;border-radius:999px` } : null,
+      parsed.due ? { text: parsed.due === fmtDate(TODAY) ? 'Hoje' : 'Amanhã', style: `font-size:11px;color:${t.textSecondary};background:${t.surface2};padding:3px 8px;border-radius:999px` } : null,
+    ].filter(Boolean) : [
+      { text: '#fase', style: `font-family:'JetBrains Mono',monospace;font-size:11px;color:${t.textTertiary}` },
+      { text: '!p1', style: `font-family:'JetBrains Mono',monospace;font-size:11px;color:${t.textTertiary}` },
+      { text: '~45m', style: `font-family:'JetBrains Mono',monospace;font-size:11px;color:${t.textTertiary}` },
+      { text: '@amanhã', style: `font-family:'JetBrains Mono',monospace;font-size:11px;color:${t.textTertiary}` },
+    ];
+
+    return {
+      theme: t, themeLabel: isDark ? 'Escuro' : 'Claro', toggleTheme: this.toggleTheme,
+      thumbStyle: `width:16px;height:16px;border-radius:50%;background:${t.accent};position:absolute;top:2px;left:${thumbLeft};transition:left 200ms cubic-bezier(0.32,0.72,0,1)`,
+      navItems: [
+        { icon: '◈', label: 'Mapa', href: 'VETOR - Mapa.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+        { icon: '▤', label: 'Painel', href: 'VETOR - Painel.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+        { icon: '☰', label: 'Tarefas', href: 'VETOR - Tarefas.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:${t.surface2};color:${t.accent};cursor:pointer;text-decoration:none` },
+        { icon: '◷', label: 'Sessões', href: 'VETOR - Sessões.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+        { icon: '⚙', label: 'Ajustes', href: 'VETOR - Ajustes.dc.html', style: `width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:${t.textTertiary};opacity:0.55;cursor:pointer;text-decoration:none` },
+      ],
+      taskCountText: `${filtered.filter(x => x.status !== 'done').length} pendentes · ${filtered.filter(x => x.status === 'done').length} concluídas`,
+      segmentedWrapStyle: `display:flex;gap:2px;padding:3px;border-radius:9px;background:${t.surface1};border:1px solid ${t.borderSubtle}`,
+      viewTabs: [{ key: 'lista', label: 'Lista' }, { key: 'kanban', label: 'Kanban' }, { key: 'calendario', label: 'Calendário' }].map(v => ({ label: v.label, onClick: this.setView(v.key), style: activeTabStyle(this.state.view === v.key) })),
+      statusTabs: [{ key: 'todas', label: 'Todas' }, { key: 'todo', label: 'A fazer' }, { key: 'doing', label: 'Em andamento' }, { key: 'done', label: 'Concluídas' }].map(v => ({ label: v.label, onClick: this.setFilterStatus(v.key), style: activeTabStyle(this.state.filterStatus === v.key) })),
+      selectStyle: `height:34px;padding:0 10px;border-radius:7px;border:1px solid ${t.borderSubtle};background:${t.surface1};color:${t.textPrimary};font-size:12px`,
+      filterPhase: this.state.filterPhase, onFilterPhaseChange: this.onFilterPhaseChange,
+      phaseOptions: PHASES,
+      grouping, onGroupingChange: this.onGroupingChange, showGrouping: this.state.view === 'lista',
+      isListaView: this.state.view === 'lista', isKanbanView: this.state.view === 'kanban', isCalendarView: this.state.view === 'calendario',
+      draftText: draft, onDraftChange: this.onDraftChange, onDraftKeyDown: this.onDraftKeyDown,
+      createBoxStyle: `border:1px solid ${t.borderStrong};border-radius:8px;background:${t.surface1};padding:12px 14px`,
+      createInputStyle: `width:100%;border:none;background:transparent;color:${t.textPrimary};font-size:14px;outline:none`,
+      hintRowStyle: `display:flex;gap:8px;margin-top:8px`,
+      draftHints,
+      groupHeaderStyle: `font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${t.textTertiary};margin-bottom:10px`,
+      groupsView, kanbanColumns, calendar,
+      taskPanel: this.buildTaskPanel(t),
+      stopProp: this.stopProp,
+    };
+  }
+
+  buildTaskPanel(t) {
+    const id = this.state.selectedTaskId;
+    if (!id) return null;
+    const task = this.state.tasks.find(x => x.id === id);
+    if (!task) return null;
+    const segStyle = (active) => `padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:${active ? t.surface1 : 'transparent'};color:${active ? t.accent : t.textSecondary}`;
+    return {
+      title: task.title, onTitleChange: (e) => this.updateTask(id, { title: e.target.value }),
+      phaseId: task.phaseId || '', onPhaseChange: (e) => this.updateTask(id, { phaseId: e.target.value || null }),
+      due: task.due || '', onDueChange: (e) => this.updateTask(id, { due: e.target.value || null }),
+      estimateMin: task.estimateMin ? String(task.estimateMin) : '', onEstimateChange: (e) => this.updateTask(id, { estimateMin: parseInt(e.target.value, 10) || null }),
+      priorityOptions: ['P1', 'P2', 'P3'].map(p => ({ label: p, onClick: () => this.updateTask(id, { priority: task.priority === p ? null : p }), style: segStyle(task.priority === p) })),
+      draftSubtask: this.state.taskPanelDraftSubtask, onDraftSubtaskChange: this.onDraftSubtaskChange, onDraftSubtaskKeyDown: this.onDraftSubtaskKeyDown,
+      subtasks: task.subtasks.map(st => ({
+        title: st.title, done: st.done, onToggle: this.toggleSubtask(id, st.id), onRemove: this.removeSubtask(id, st.id),
+        rowStyle: `display:flex;align-items:center;gap:10px`,
+        checkboxStyle: `width:16px;height:16px;border-radius:4px;border:1px solid ${st.done ? t.accent : t.borderStrong};background:${st.done ? t.accent : t.surface1};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0`,
+        titleStyle: `flex:1;font-size:13px;color:${st.done ? t.textTertiary : t.textPrimary};text-decoration:${st.done ? 'line-through' : 'none'}`,
+        removeStyle: `color:${t.textTertiary};cursor:pointer;font-size:15px;line-height:1`,
+      })),
+      statusToggleLabel: task.status === 'done' ? 'Reabrir tarefa' : 'Concluir tarefa',
+      onToggleStatus: () => { this.toggleTask(id)(); this.closeTaskDetail(); },
+      onClose: this.closeTaskDetail,
+      backdropStyle: `position:fixed;inset:0;background:${this.state.isDark ? 'rgba(0,0,0,0.5)' : 'rgba(20,30,35,0.25)'};z-index:100;display:flex;justify-content:flex-end`,
+      panelStyle: `width:380px;height:100%;background:${t.surface2};border-left:1px solid ${t.borderSubtle};box-shadow:-20px 0 40px -10px rgba(0,0,0,0.4);display:flex;flex-direction:column`,
+      headerStyle: `display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid ${t.borderSubtle};flex-shrink:0`,
+      headerLabelStyle: `font-size:15px;font-weight:600`,
+      closeBtnStyle: `background:none;border:none;color:${t.textTertiary};font-size:22px;cursor:pointer;line-height:1;padding:2px`,
+      bodyStyle: `flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:18px`,
+      fieldLabelStyle: `font-size:11px;font-weight:600;letter-spacing:0.06em;color:${t.textTertiary};margin-bottom:6px`,
+      inputStyle: `width:100%;height:38px;padding:0 12px;border-radius:6px;border:1px solid ${t.borderSubtle};background:${t.surface1};color:${t.textPrimary};font-size:13px;box-sizing:border-box`,
+      segmentedWrapStyle: `display:flex;gap:2px;padding:3px;border-radius:8px;background:${t.surface1};width:fit-content`,
+      subtaskInputStyle: `width:100%;height:36px;padding:0 12px;border-radius:6px;border:1px solid ${t.borderSubtle};background:${t.surface1};color:${t.textPrimary};font-size:13px;box-sizing:border-box`,
+      footerStyle: `padding:18px 24px;border-top:1px solid ${t.borderSubtle};flex-shrink:0`,
+      statusBtnStyle: `width:100%;height:42px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;background:${task.status === 'done' ? t.surface1 : t.accent};color:${task.status === 'done' ? t.textPrimary : '#06231F'}`,
+    };
+  }
+
+  buildCalendarView(t, filtered, activeTabStyle) {
+    const statusMeta = { todo: { label: 'A fazer', color: t.textTertiary }, doing: { label: 'Em andamento', color: '#5B9BD5' }, done: { label: 'Concluído', color: '#5FB87A' } };
+    const mode = this.state.calendarMode;
+    const anchor = new Date(this.state.calendarAnchor);
+    const isMonth = mode === 'mes';
+
+    const buildTaskChip = (x, compact) => {
+      const phase = PHASES.find(p => p.id === x.phaseId);
+      const sm = statusMeta[x.status] || statusMeta.todo;
+      return {
+        title: x.title,
+        cardStyle: `background:${t.surface2};border-radius:6px;padding:${compact ? '7px 8px' : '8px'};cursor:pointer;transition:transform 160ms cubic-bezier(0.32,0.72,0,1);`,
+        titleStyle: `font-size:${compact ? '12px' : '12px'};font-weight:500;color:${t.textPrimary};margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap`,
+        phaseChipStyle: `display:flex;align-items:center;gap:5px;font-size:10px;color:${t.textSecondary};margin-bottom:6px`,
+        phaseDotStyle: `width:5px;height:5px;border-radius:50%;background:${phase ? phase.color : t.textTertiary}`,
+        phaseName: phase ? phase.name.replace(/^(Fase \S+ — |Trilha paralela — )/, '') : '',
+        statusLabel: sm.label,
+        statusPillStyle: `display:inline-block;font-size:${compact ? '10px' : '10px'};font-weight:600;color:${sm.color};background:${t.surface1};padding:2px 7px;border-radius:999px`,
+        onClick: (e) => { e.stopPropagation(); this.toggleTask(x.id)(); },
+        onMouseEnter: this.onCardHover(x.id), onMouseLeave: this.onCardLeave,
+      };
+    };
+
+    let monthDays = [];
+    if (isMonth) {
+      const startOfMonth = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+      const offset = (startOfMonth.getDay() + 6) % 7;
+      const gridStart = addDays(startOfMonth, -offset);
+      monthDays = Array.from({ length: 42 }, (_, i) => {
+        const d = addDays(gridStart, i);
+        const dstr = fmtDate(d);
+        const inMonth = d.getMonth() === anchor.getMonth();
+        const isToday = dstr === fmtDate(TODAY);
+        const dayTasks = filtered.filter(x => x.due === dstr);
+        const shown = dayTasks.slice(0, 2);
+        const extra = dayTasks.length - shown.length;
+        return {
+          dayNum: d.getDate(),
+          wrapStyle: `background:${t.surface1};border:1px solid ${isToday ? t.accent : t.borderSubtle};border-radius:8px;padding:10px;min-height:150px;opacity:${inMonth ? 1 : 0.4};overflow:hidden;min-width:0`,
+          headerStyle: `font-size:13px;font-weight:600;color:${isToday ? t.accent : t.textTertiary}`,
+          tasks: shown.map(x => buildTaskChip(x, true)),
+          hasMore: extra > 0, moreText: `+${extra} mais`,
+          moreStyle: `font-size:10px;color:${t.textTertiary}`,
+        };
+      });
+    }
+
+    let weekDays = [];
+    if (!isMonth) {
+      const weekStart = addDays(anchor, -((anchor.getDay() + 6) % 7));
+      weekDays = Array.from({ length: 7 }, (_, i) => {
+        const d = addDays(weekStart, i);
+        const dstr = fmtDate(d);
+        const isToday = dstr === fmtDate(TODAY);
+        const dayTasks = filtered.filter(x => x.due === dstr);
+        return {
+          label: d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }),
+          wrapStyle: `background:${t.surface1};border:1px solid ${isToday ? t.accent : t.borderSubtle};border-radius:8px;padding:12px;min-height:160px`,
+          headerStyle: `font-size:11px;font-weight:600;color:${isToday ? t.accent : t.textTertiary};text-transform:uppercase;letter-spacing:0.04em`,
+          tasks: dayTasks.map(x => buildTaskChip(x, false)),
+        };
+      });
+    }
+
+    let title;
+    if (isMonth) {
+      title = anchor.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      title = title.charAt(0).toUpperCase() + title.slice(1);
+    } else {
+      const weekStart = addDays(anchor, -((anchor.getDay() + 6) % 7));
+      const weekEnd = addDays(weekStart, 6);
+      const fmt = (d) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+      title = `${fmt(weekStart)} – ${fmt(weekEnd)}`;
+    }
+
+    return {
+      isMonth, isWeek: !isMonth, title, monthDays, weekDays,
+      onPrev: this.calendarPrev, onNext: this.calendarNext, onToday: this.calendarToday,
+      navBtnStyle: `width:28px;height:28px;border-radius:6px;border:1px solid ${t.borderSubtle};background:${t.surface1};color:${t.textSecondary};font-size:14px;cursor:pointer`,
+      titleStyle: `font-size:15px;font-weight:600;min-width:160px;text-transform:capitalize`,
+      todayBtnStyle: `height:28px;padding:0 12px;border-radius:6px;border:1px solid ${t.borderSubtle};background:none;color:${t.textSecondary};font-size:12px;cursor:pointer`,
+      onSetMonth: this.setCalendarMode('mes'), onSetWeek: this.setCalendarMode('semana'),
+      monthTabStyle: activeTabStyle(isMonth), weekTabStyle: activeTabStyle(!isMonth),
+      weekdayLabels: ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'],
+      weekdayLabelStyle: `font-size:11px;font-weight:600;color:${t.textTertiary};text-align:center;padding-bottom:6px;letter-spacing:0.04em`,
+      hoverTask: this.buildHoverTask(t, statusMeta),
+      hoverStyle: this.state.hoverStyle,
+    };
+  }
+
+  buildHoverTask(t, statusMeta) {
+    if (!this.state.hoverTaskId) return null;
+    const x = this.state.tasks.find(task => task.id === this.state.hoverTaskId);
+    if (!x) return null;
+    const phase = PHASES.find(p => p.id === x.phaseId);
+    const sm = statusMeta[x.status] || statusMeta.todo;
+    const due = this.dueLabel(x.due, x.status);
+    return {
+      title: x.title, statusLabel: sm.label,
+      statusPillStyle: `display:inline-block;font-size:11px;font-weight:600;color:${sm.color};background:${t.surface2};padding:3px 9px;border-radius:999px;margin-bottom:10px`,
+      boxStyle: `background:${t.surface1};border:1px solid ${t.borderStrong};border-radius:8px;padding:14px;box-shadow:0 16px 32px -8px rgba(0,0,0,0.4)`,
+      titleStyle: `font-size:14px;font-weight:600;color:${t.textPrimary};margin-bottom:8px`,
+      hasPhase: !!phase, phaseName: phase ? phase.name : '',
+      phaseDotStyle: `width:6px;height:6px;border-radius:50%;background:${phase ? phase.color : t.textTertiary};flex-shrink:0;margin-right:6px`,
+      hasDue: !!due, dueLabelText: due ? due.label : '',
+      hasPriority: !!x.priority, priority: x.priority,
+      hasEstimate: !!x.estimateMin, estimateText: `${x.estimateMin} min`,
+      hasSubtasks: x.subtasks.length > 0, subtaskText: `${x.subtasks.filter(s => s.done).length}/${x.subtasks.length} subtarefas`,
+      metaRowStyle: `display:flex;align-items:center;font-size:12px;color:${t.textSecondary};margin-bottom:5px`,
+      metaTextStyle: `font-size:12px;color:${t.textSecondary};margin-bottom:5px`,
+    };
+  }
+}
+</script>
+</body>
+</html>
