@@ -1,1 +1,0 @@
-A pasta [ D:\Área da Internet\GitHub\Repositórios\Pessoal\projeto-kaizen\Arquivos Design do Sistema ] serve como base do design e algumas funcionalidades que ainda serão implementadas ao sistema kaizen. 
